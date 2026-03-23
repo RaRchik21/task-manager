@@ -110,3 +110,6 @@ ROLE_JUNIOR = 'junior'
 
 # Кастомная модель пользователя
 AUTH_USER_MODEL = 'board.User'
+
+import os
+PORT = os.environ.get('PORT', 8000)
