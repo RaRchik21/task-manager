@@ -13,7 +13,14 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-^@fy#^$f5%)v)lx6w!!+b
 
 DEBUG = config('DEBUG', default=False, cast=bool)
 
+# 1. Разрешенные хосты (у вас уже может быть заполнено)
 ALLOWED_HOSTS = ['*']
+
+# 2. Доверенные источники для CSRF (самое важное для ошибки 403)
+CSRF_TRUSTED_ORIGINS = ['https://railway.app']
+
+# 3. Дополнительные настройки для работы через прокси Railway
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
