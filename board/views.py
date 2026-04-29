@@ -56,6 +56,18 @@ from django.http import JsonResponse
 from django.core.management import call_command
 from django.views.decorators.csrf import csrf_exempt
 
+
+@csrf_exempt
+def create_admin(request):
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    
+    if not User.objects.filter(username='admin').exists():
+        User.objects.create_superuser('admin', 'admin@example.com', 'admin123')
+        return JsonResponse({'status': 'created', 'username': 'admin', 'password': 'admin123'})
+    return JsonResponse({'status': 'already exists'})
+
+
 @csrf_exempt
 def migrate_db(request):
     try:
@@ -64,7 +76,7 @@ def migrate_db(request):
     except Exception as e:
         return JsonResponse({'status': 'error', 'error': str(e)})
     
-    
+
 class IsAdmin(BasePermission):
     def has_permission(self, request, view):
         return request.user.role == 'admin'
