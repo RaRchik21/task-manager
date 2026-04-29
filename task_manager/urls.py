@@ -22,11 +22,24 @@ from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import TemplateView
 
+from django.contrib import admin
+from django.urls import path, include, re_path
+from django.views.generic import TemplateView
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('board.urls')),
-    path('main/', TemplateView.as_view(template_name='index.html')),
-    path('structure/', TemplateView.as_view(template_name='orgchart.html')),
+    
+    # API бэкенда (все маршруты из board.urls)
+    path('', include('board.urls')),  # ваши /api/tasks, /api/columns и т.д.
+    
+    # Фронтенд страницы
+    path('main/', TemplateView.as_view(template_name='index.html'), name='main'),
+    path('structure/', TemplateView.as_view(template_name='orgchart.html'), name='structure'),
+    
+    # Перенаправление корня на /main
+    path('', TemplateView.as_view(template_name='index.html'), name='home'),
+    
+    # Для обратной совместимости (если кто-то переходит по старым ссылкам)
     path('index.html', TemplateView.as_view(template_name='index.html')),
     path('orgchart.html', TemplateView.as_view(template_name='orgchart.html')),
 ]

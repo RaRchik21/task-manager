@@ -196,7 +196,7 @@
 <header>
   <h1 id="pageTitle">Органиграмма</h1>
   <div class="header-right">
-    <a href="/index.html" class="header-btn">← На доску</a>
+    <a href="/main" class="header-btn">← На доску</a>
   </div>
 </header>
 
@@ -235,7 +235,7 @@
 </div>
 
 <script>
-  const API = 'http://127.0.0.1:8000/api';
+  const API = '/api';
   const token = localStorage.getItem('token');
   const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
   let allUsers = [];
@@ -281,10 +281,10 @@
 
 
   async function loadData() {
-    if (!token) { window.location.href = '/index.html'; return; }
+    if (!token) { window.location.href = '/main'; return; }
     try {
       const res = await fetch(`${API}/users/`, { headers: authHeaders() });
-      if (res.status === 401) { window.location.href = '/index.html'; return; }
+      if (res.status === 401) { window.location.href = '/main'; return; }
       const data = await res.json();
       allUsers = data.results || data;
       renderTree();
