@@ -11,6 +11,45 @@ from .serializers import (UserSerializer, UserCreateSerializer,
 #         ПЕРМИШЕНЫ
 # ═══════════════════════════════
 
+
+from django.contrib.auth import get_user_model
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
+User = get_user_model()
+
+@csrf_exempt
+def create_test_users(request):
+    users_data = [
+        {'username': 'TestMS', 'password': 'TestMS1234@weq', 'role': 'junior'},
+        {'username': 'TestSpec', 'password': 'TestSpec1234@weq', 'role': 'specialist'},
+        {'username': 'TestVS', 'password': 'TestVS1234@weq', 'role': 'lead'},
+        {'username': 'TestGS', 'password': 'TestGS1234@weq', 'role': 'chief'},
+        {'username': 'TestSS', 'password': 'TestSS1234@weq', 'role': 'senior'},
+    ]
+    
+    results = []
+    for user_data in users_data:
+        username = user_data['username']
+        password = user_data['password']
+        role = user_data['role']
+        
+        try:
+            if not User.objects.filter(username=username).exists():
+                user = User.objects.create_user(
+                    username=username,
+                    password=password,
+                    role=role,
+                    email=f"{username}@example.com"
+                )
+                results.append({'username': username, 'status': 'created', 'role': role})
+            else:
+                results.append({'username': username, 'status': 'already exists'})
+        except Exception as e:
+            results.append({'username': username, 'status': 'error', 'error': str(e)})
+    
+    return JsonResponse({'users': results, 'message': 'Готово! Теперь можно входить'})
+
 class IsAdmin(BasePermission):
     def has_permission(self, request, view):
         return request.user.role == 'admin'
