@@ -26,4 +26,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('board.urls')),
     path('index.html', TemplateView.as_view(template_name='index.html')),
+    path('orgchart.html', TemplateView.as_view(template_name='orgchart.html')),
 ]

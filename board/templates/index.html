@@ -28,7 +28,7 @@
       top: 0;
       z-index: 50;
     }
-    header h1 { font-size: 16px; font-weight: 700; color: #2C2C2A; letter-spacing: -0.3px; }
+    header h1 { font-size: 16px; font-weight: 700; color: #2C2C2A; letter-spacing: -0.3px; cursor: default; }
     .header-center {
       display: flex;
       align-items: center;
@@ -49,45 +49,44 @@
     }
     .search-input:focus { background: white; border-color: #888780; }
     .search-wrap { position: relative; flex: 1; }
-    .search-icon {
-      position: absolute;
-      left: 10px; top: 50%;
-      transform: translateY(-50%);
-      font-size: 12px;
-      color: #888780;
-    }
-    .header-stats { font-size: 12px; color: #888780; white-space: nowrap; }
+    .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #888780; }
     .header-right { display: flex; align-items: center; gap: 8px; }
-    .user-badge {
-      background: rgba(211,209,199,0.7);
-      border-radius: 20px;
-      padding: 4px 12px;
-      font-size: 13px;
-      color: #444441;
-    }
+    .user-badge { background: rgba(211,209,199,0.7); border-radius: 20px; padding: 4px 12px; font-size: 13px; color: #444441; }
     .header-btn {
-      background: rgba(255,255,255,0.5);
-      border: 1px solid rgba(211,209,199,0.8);
-      border-radius: 8px;
-      padding: 4px 12px;
-      font-size: 13px;
-      color: #5F5E5A;
-      cursor: pointer;
-      transition: all 0.15s;
+      background: rgba(255,255,255,0.5); border: 1px solid rgba(211,209,199,0.8);
+      border-radius: 8px; padding: 4px 12px; font-size: 13px; color: #5F5E5A;
+      cursor: pointer; transition: all 0.15s;
     }
     .header-btn:hover { background: rgba(232,226,216,0.8); }
 
     /* ── СТАТИСТИКА ── */
     .stats-bar {
-      display: flex;
-      gap: 16px;
-      padding: 8px 24px;
+      display: flex; gap: 16px; padding: 8px 24px;
       background: rgba(237,232,223,0.5);
       border-bottom: 1px solid rgba(211,209,199,0.3);
-      font-size: 12px;
-      color: #888780;
+      font-size: 12px; color: #888780; align-items: center;
     }
     .stats-bar strong { color: #444441; }
+
+    /* ── ФИЛЬТРЫ ── */
+    .filter-bar {
+      display: none; gap: 8px; padding: 8px 24px;
+      background: rgba(237,232,223,0.3);
+      border-bottom: 1px solid rgba(211,209,199,0.2);
+      align-items: center; flex-wrap: wrap;
+    }
+    .filter-bar.visible { display: flex; }
+    .filter-btn {
+      background: rgba(255,255,255,0.6); border: 1px solid rgba(211,209,199,0.8);
+      border-radius: 20px; padding: 4px 14px; font-size: 12px; color: #5F5E5A;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .filter-btn:hover, .filter-btn.active { background: #444441; color: white; border-color: #444441; }
+    .filter-label { font-size: 12px; color: #888780; }
+    .filter-user-select {
+      font-size: 12px; padding: 4px 10px; border: 1px solid rgba(211,209,199,0.8);
+      border-radius: 20px; background: rgba(255,255,255,0.6); color: #5F5E5A; outline: none;
+    }
 
     /* ── ДОСКА ── */
     .board-wrapper { padding: 24px; overflow-x: auto; }
@@ -95,71 +94,59 @@
 
     /* ── КОЛОНКА ── */
     .column {
-      background: rgba(232,226,216,0.7);
-      backdrop-filter: blur(8px);
-      border-radius: 14px;
-      padding: 12px;
-      width: 280px;
-      min-width: 280px;
+      background: rgba(232,226,216,0.7); backdrop-filter: blur(8px);
+      border-radius: 14px; padding: 12px; width: 280px; min-width: 280px;
       border: 1px solid rgba(211,209,199,0.5);
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      transition: box-shadow 0.15s ease;
+      user-select: none;
     }
-    .column:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.07); }
+    .column:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.07); }
     .column.collapsed { width: 56px; min-width: 56px; padding: 12px 8px; overflow: hidden; }
     .column.drag-over { border: 2px dashed #888780; }
-    .column.dragging-col { opacity: 0.5; }
+    .column.col-dragging { opacity: 0.5; }
     .column .tasks { min-height: 60px; }
 
-    .column-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 12px;
-      padding: 0 2px;
-      gap: 6px;
-    }
-    .column-title {
-      font-size: 14px; font-weight: 600; color: #444441;
-      flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .column-count {
-      background: rgba(211,209,199,0.8);
-      border-radius: 10px; padding: 2px 8px; font-size: 11px; color: #5F5E5A; white-space: nowrap;
-    }
+    .column-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 0 2px; gap: 6px; }
+    .column-title { font-size: 14px; font-weight: 600; color: #444441; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .column-count { background: rgba(211,209,199,0.8); border-radius: 10px; padding: 2px 8px; font-size: 11px; color: #5F5E5A; white-space: nowrap; }
     .column-actions { display: flex; gap: 4px; }
-    .col-btn {
-      background: none; border: none; cursor: pointer; font-size: 13px;
-      color: #888780; padding: 2px 4px; border-radius: 4px; transition: all 0.15s;
-    }
+    .col-btn { background: none; border: none; cursor: pointer; font-size: 13px; color: #888780; padding: 2px 4px; border-radius: 4px; transition: all 0.15s; }
     .col-btn:hover { background: rgba(0,0,0,0.06); color: #444441; }
 
-    .column.collapsed .column-title {
-      writing-mode: vertical-rl; transform: rotate(180deg);
-      margin: 8px auto; display: block; white-space: nowrap;
-    }
-    .column.collapsed .tasks,
-    .column.collapsed .btn-add-task,
-    .column.collapsed .column-count,
-    .column.collapsed .column-actions { display: none; }
+    .column.collapsed .column-title { writing-mode: vertical-rl; transform: rotate(180deg); margin: 8px auto; display: block; white-space: nowrap; }
+    .column.collapsed .tasks, .column.collapsed .btn-add-task,
+    .column.collapsed .column-count, .column.collapsed .column-actions { display: none; }
     .column.collapsed .column-header { flex-direction: column; margin-bottom: 0; }
 
     /* ── КАРТОЧКА ── */
     .task-card {
-      background: rgba(255,255,255,0.85);
-      backdrop-filter: blur(4px);
-      border-radius: 10px; padding: 10px 12px; margin-bottom: 8px;
-      border: 1px solid rgba(232,226,216,0.8);
-      cursor: grab; transition: transform 0.15s ease, box-shadow 0.15s ease;
-      position: relative;
+        background: rgba(255,255,255,0.85);
+        backdrop-filter: blur(4px);
+        border-radius: 10px;
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        border: 1px solid rgba(232,226,216,0.8);
+        cursor: grab;
+        position: relative;
+        transition: box-shadow 0.15s ease;
+        user-select: none;
+        overflow: hidden;
     }
-    .task-card:hover { transform: scale(1.02); box-shadow: 0 4px 16px rgba(0,0,0,0.09); }
-    .task-card:active { cursor: grabbing; }
-    .task-card.dragging { opacity: 0.4; transform: scale(1.04); }
 
     .priority-bar {
-      position: absolute; left: 0; top: 0; bottom: 0;
-      width: 3px; border-radius: 10px 0 0 10px;
+        position: absolute;
+        left: 0;
+        top: 2px;
+        bottom: 2px;
+        width: 3px;
+        border-radius: 2px;
     }
+    .task-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.09); }
+    .task-card:active { cursor: grabbing; }
+    .task-card.dragging { opacity: 0.4; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+    .task-card.other-user { border-left: 3px solid #9B8FD4; }
+    .task-card.chief-goal { border-left: 4px solid #E24B4A; border-top: 1px solid rgba(232,226,216,0.8); border-right: 1px solid rgba(232,226,216,0.8); border-bottom: 1px solid rgba(232,226,216,0.8); background: linear-gradient(90deg, rgba(226,75,74,0.04) 0%, rgba(255,255,255,0.85) 100%); }
+
     .priority-high { background: #E24B4A; }
     .priority-medium { background: #EF9F27; }
     .priority-low { background: #639922; }
@@ -167,198 +154,219 @@
     .task-title { font-size: 14px; color: #2C2C2A; margin-bottom: 4px; padding-left: 8px; }
     .task-comment { font-size: 12px; color: #888780; margin-bottom: 4px; padding-left: 8px; font-style: italic; }
     .task-meta { font-size: 11px; color: #888780; display: flex; gap: 8px; flex-wrap: wrap; padding-left: 8px; align-items: center; }
-    .task-time { color: #5F5E5A; }
     .task-deadline { padding: 1px 6px; border-radius: 4px; font-size: 11px; }
     .deadline-ok { background: #EAF3DE; color: #3B6D11; }
     .deadline-soon { background: #FAEEDA; color: #854F0B; }
     .deadline-overdue { background: #FCEBEB; color: #A32D2D; }
+    .deadline-completed { background: #4CAF50; color: white; padding: 2px 8px; border-radius: 4px; }
+    .chief-goal-badge { background: linear-gradient(135deg, #E24B4A, #FF6B6B); color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    .other-user-badge { background: #EEEAF8; color: #6B5BBF; padding: 1px 6px; border-radius: 4px; font-size: 11px; }
+
     .task-footer { display: flex; justify-content: flex-end; gap: 4px; margin-top: 6px; }
-    .task-action-btn {
-      background: none; border: none; cursor: pointer; font-size: 11px;
-      color: #B4B2A9; padding: 2px 4px; border-radius: 4px; transition: all 0.15s;
-    }
+    .task-action-btn { background: none; border: none; cursor: pointer; font-size: 11px; color: #B4B2A9; padding: 2px 4px; border-radius: 4px; transition: all 0.15s; }
     .task-action-btn:hover { background: rgba(0,0,0,0.05); color: #5F5E5A; }
 
-    .drag-placeholder {
-      height: 44px; border-radius: 10px;
-      background: rgba(211,209,199,0.4); margin-bottom: 8px;
-      border: 2px dashed rgba(180,178,169,0.6);
-    }
+    .drag-placeholder { height: 44px; border-radius: 10px; background: rgba(211,209,199,0.4); margin-bottom: 8px; border: 2px dashed rgba(180,178,169,0.6); pointer-events: none; }
 
     /* ── КНОПКИ ── */
-    .btn-add-task {
-      width: 100%; background: none; border: 1px dashed rgba(180,178,169,0.7);
-      border-radius: 8px; padding: 8px; font-size: 13px; color: #888780;
-      cursor: pointer; margin-top: 4px; transition: all 0.15s;
-    }
+    .btn-add-task { width: 100%; background: none; border: 1px dashed rgba(180,178,169,0.7); border-radius: 8px; padding: 8px; font-size: 13px; color: #888780; cursor: pointer; margin-top: 4px; transition: all 0.15s; }
     .btn-add-task:hover { background: rgba(241,239,232,0.8); color: #5F5E5A; }
-
-    .btn-add-column {
-      background: rgba(237,232,223,0.5); border: 1px dashed rgba(180,178,169,0.7);
-      border-radius: 14px; padding: 12px 20px; font-size: 14px; color: #888780;
-      cursor: pointer; min-width: 180px; white-space: nowrap; align-self: flex-start; transition: all 0.15s;
-    }
+    .btn-add-column { background: rgba(237,232,223,0.5); border: 1px dashed rgba(180,178,169,0.7); border-radius: 14px; padding: 12px 20px; font-size: 14px; color: #888780; cursor: pointer; min-width: 180px; white-space: nowrap; align-self: flex-start; transition: all 0.15s; }
     .btn-add-column:hover { background: rgba(232,226,216,0.8); color: #5F5E5A; }
 
     /* ── МОДАЛКИ ── */
-    .modal-overlay {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,0.25); backdrop-filter: blur(4px);
-      z-index: 100; align-items: center; justify-content: center;
-    }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.25); backdrop-filter: blur(4px); z-index: 100; align-items: center; justify-content: center; }
     .modal-overlay.active { display: flex; }
-    .modal {
-      background: rgba(245,240,232,0.97); backdrop-filter: blur(20px);
-      border-radius: 18px; padding: 24px; width: 400px;
-      border: 1px solid rgba(211,209,199,0.6);
-      box-shadow: 0 20px 60px rgba(0,0,0,0.12);
-    }
+    .modal { background: rgba(245,240,232,0.97); backdrop-filter: blur(20px); border-radius: 18px; padding: 24px; width: 420px; border: 1px solid rgba(211,209,199,0.6); box-shadow: 0 20px 60px rgba(0,0,0,0.12); }
     .modal h2 { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #2C2C2A; }
     .modal label { font-size: 12px; color: #888780; display: block; margin-bottom: 4px; }
     .modal input, .modal select, .modal textarea {
-      width: 100%; padding: 8px 12px;
-      border: 1px solid rgba(211,209,199,0.8); border-radius: 10px;
-      font-size: 14px; background: rgba(255,255,255,0.7);
+      width: 100%; padding: 8px 12px; border: 1px solid rgba(211,209,199,0.8);
+      border-radius: 10px; font-size: 14px; background: rgba(255,255,255,0.7);
       margin-bottom: 10px; outline: none; font-family: inherit; transition: all 0.15s;
     }
     .modal input:focus, .modal select:focus, .modal textarea:focus { background: white; border-color: #888780; }
     .modal textarea { resize: vertical; min-height: 60px; }
     .modal-buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
-    .btn-primary {
-      background: #444441; color: white; border: none;
-      border-radius: 10px; padding: 8px 18px; font-size: 14px; cursor: pointer; transition: all 0.15s;
-    }
+    .btn-primary { background: #444441; color: white; border: none; border-radius: 10px; padding: 8px 18px; font-size: 14px; cursor: pointer; transition: all 0.15s; }
     .btn-primary:hover { background: #2C2C2A; }
-    .btn-cancel {
-      background: none; border: 1px solid rgba(211,209,199,0.8);
-      border-radius: 10px; padding: 8px 16px; font-size: 14px; cursor: pointer; color: #5F5E5A; transition: all 0.15s;
-    }
+    .btn-cancel { background: none; border: 1px solid rgba(211,209,199,0.8); border-radius: 10px; padding: 8px 16px; font-size: 14px; cursor: pointer; color: #5F5E5A; transition: all 0.15s; }
     .btn-cancel:hover { background: rgba(232,226,216,0.8); }
+    .btn-danger { background: #FCEBEB; color: #A32D2D; border: none; border-radius: 10px; padding: 8px 16px; font-size: 14px; cursor: pointer; }
+    .btn-danger:hover { background: #F7C1C1; }
+
+    /* ── ЧЕКБОКС ── */
+    .checkbox-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .checkbox-row input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; accent-color: #E24B4A; }
+    .checkbox-row label { font-size: 13px; color: #444441; cursor: pointer; margin-bottom: 0; }
 
     /* ── ЛОГИН ── */
-    .login-screen {
-      display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #F5F0E8;
-    }
-    .login-card {
-      background: rgba(255,255,255,0.9); backdrop-filter: blur(20px);
-      border-radius: 20px; padding: 36px; width: 340px;
-      border: 1px solid rgba(211,209,199,0.6); box-shadow: 0 20px 60px rgba(0,0,0,0.08);
-    }
+    .login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #F5F0E8; }
+    .login-card { background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); border-radius: 20px; padding: 36px; width: 340px; border: 1px solid rgba(211,209,199,0.6); box-shadow: 0 20px 60px rgba(0,0,0,0.08); }
     .login-card h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.5px; }
     .login-card p { font-size: 14px; color: #888780; margin-bottom: 24px; }
-    .login-card input {
-      width: 100%; padding: 10px 14px; border: 1px solid rgba(211,209,199,0.8);
-      border-radius: 10px; font-size: 14px; background: rgba(245,240,232,0.6);
-      margin-bottom: 12px; outline: none; transition: all 0.15s;
-    }
+    .login-card input { width: 100%; padding: 10px 14px; border: 1px solid rgba(211,209,199,0.8); border-radius: 10px; font-size: 14px; background: rgba(245,240,232,0.6); margin-bottom: 12px; outline: none; transition: all 0.15s; }
     .login-card input:focus { border-color: #888780; background: white; }
-    .btn-login {
-      width: 100%; background: #2C2C2A; color: white; border: none;
-      border-radius: 10px; padding: 11px; font-size: 14px; cursor: pointer; margin-top: 4px; transition: all 0.15s;
-    }
+    .btn-login { width: 100%; background: #2C2C2A; color: white; border: none; border-radius: 10px; padding: 11px; font-size: 14px; cursor: pointer; margin-top: 4px; transition: all 0.15s; }
     .btn-login:hover { background: #444441; }
     .login-error { font-size: 13px; color: #993C1D; margin-top: 8px; display: none; }
 
     /* ── БОКОВЫЕ ПАНЕЛИ ── */
-    .side-panel {
-      position: fixed; top: 0; height: 100vh;
-      background: rgba(245,240,232,0.97); backdrop-filter: blur(20px);
-      border: 1px solid rgba(211,209,199,0.6); transition: 0.25s ease;
-      z-index: 200; overflow-y: auto; box-shadow: 0 0 40px rgba(0,0,0,0.08);
-    }
-    .panel-right { right: -360px; width: 340px; border-left-width: 1px; }
+    .side-panel { position: fixed; top: 0; height: 100vh; background: rgba(245,240,232,0.97); backdrop-filter: blur(20px); border: 1px solid rgba(211,209,199,0.6); transition: 0.25s ease; z-index: 200; overflow-y: auto; box-shadow: 0 0 40px rgba(0,0,0,0.08); }
+    .panel-right { right: -360px; width: 340px; }
     .panel-right.open { right: 0; }
-    .panel-left { left: -420px; width: 400px; border-right-width: 1px; }
+    .panel-left { left: -420px; width: 400px; }
     .panel-left.open { left: 0; }
     .panel-wide { right: -420px; width: 400px; }
     .panel-wide.open { right: 0; }
 
-    .panel-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 20px 24px 16px; border-bottom: 1px solid rgba(211,209,199,0.5);
-      position: sticky; top: 0; background: rgba(245,240,232,0.97);
-    }
+    .panel-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px 16px; border-bottom: 1px solid rgba(211,209,199,0.5); position: sticky; top: 0; background: rgba(245,240,232,0.97); z-index: 1; }
     .panel-header h2 { font-size: 16px; font-weight: 600; }
-    .panel-close {
-      background: none; border: none; cursor: pointer; font-size: 18px;
-      color: #888780; padding: 4px 8px; border-radius: 6px; line-height: 1; transition: all 0.15s;
-    }
+    .panel-close { background: none; border: none; cursor: pointer; font-size: 18px; color: #888780; padding: 4px 8px; border-radius: 6px; line-height: 1; transition: all 0.15s; }
     .panel-close:hover { background: rgba(232,226,216,0.8); color: #2C2C2A; }
     .panel-body { padding: 20px 24px; }
 
     /* ── НАСТРОЙКИ ── */
     .settings-section { margin-bottom: 24px; }
-    .settings-section > label {
-      display: block; font-size: 11px; color: #888780; margin-bottom: 10px;
-      text-transform: uppercase; letter-spacing: 0.6px; font-weight: 500;
-    }
+    .settings-section > label { display: block; font-size: 11px; color: #888780; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 500; }
     .theme-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
-    .theme-swatch {
-      height: 52px; border-radius: 10px; cursor: pointer;
-      border: 2px solid transparent; transition: all 0.15s; position: relative;
-    }
+    .theme-swatch { height: 52px; border-radius: 10px; cursor: pointer; border: 2px solid transparent; transition: all 0.15s; position: relative; }
     .theme-swatch:hover { transform: scale(1.05); }
     .theme-swatch.active { border-color: #444441; }
-    .theme-swatch span {
-      position: absolute; bottom: 4px; left: 0; right: 0;
-      text-align: center; font-size: 10px; color: rgba(0,0,0,0.5);
-    }
-    .color-row, .opacity-row {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 8px; padding: 8px 12px;
-      background: rgba(255,255,255,0.5); border-radius: 10px; border: 1px solid rgba(211,209,199,0.4);
-    }
+    .theme-swatch span { position: absolute; bottom: 4px; left: 0; right: 0; text-align: center; font-size: 10px; color: rgba(0,0,0,0.5); }
+    .color-row, .opacity-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; padding: 8px 12px; background: rgba(255,255,255,0.5); border-radius: 10px; border: 1px solid rgba(211,209,199,0.4); }
     .color-row span, .opacity-row span { font-size: 13px; color: #444441; }
-    .color-row input[type=color] {
-      width: 36px; height: 26px; border: 1px solid rgba(211,209,199,0.8);
-      border-radius: 6px; cursor: pointer; padding: 2px; background: white;
-    }
+    .color-row input[type=color] { width: 36px; height: 26px; border: 1px solid rgba(211,209,199,0.8); border-radius: 6px; cursor: pointer; padding: 2px; background: white; }
     .opacity-row input[type=range] { width: 90px; }
     .opacity-val { font-size: 12px; color: #888780; min-width: 32px; text-align: right; }
-    .btn-reset {
-      width: 100%; background: none; border: 1px solid rgba(211,209,199,0.8);
-      border-radius: 10px; padding: 8px; font-size: 13px; color: #888780; cursor: pointer; transition: all 0.15s;
-    }
+    .btn-reset { width: 100%; background: none; border: 1px solid rgba(211,209,199,0.8); border-radius: 10px; padding: 8px; font-size: 13px; color: #888780; cursor: pointer; transition: all 0.15s; margin-top: 8px; }
     .btn-reset:hover { background: rgba(232,226,216,0.8); }
+    .settings-input { width: 100%; padding: 8px 12px; border: 1px solid rgba(211,209,199,0.8); border-radius: 10px; font-size: 14px; background: rgba(255,255,255,0.7); outline: none; margin-bottom: 8px; }
+    .settings-input:focus { background: white; border-color: #888780; }
+    .btn-save-setting { background: #444441; color: white; border: none; border-radius: 8px; padding: 6px 14px; font-size: 13px; cursor: pointer; }
 
     /* ── ПОЛЬЗОВАТЕЛИ ── */
-    .user-card {
-      display: flex; align-items: center; gap: 12px;
-      padding: 12px 24px; border-bottom: 1px solid rgba(211,209,199,0.3); transition: background 0.15s;
-    }
+    .user-card { display: flex; align-items: center; gap: 12px; padding: 12px 24px; border-bottom: 1px solid rgba(211,209,199,0.3); transition: background 0.15s; }
     .user-card:hover { background: rgba(232,226,216,0.4); }
-    .user-avatar {
-      width: 38px; height: 38px; border-radius: 50%;
-      background: rgba(211,209,199,0.8); display: flex; align-items: center;
-      justify-content: center; font-size: 14px; font-weight: 600; color: #5F5E5A; flex-shrink: 0;
-    }
+    .user-avatar { width: 38px; height: 38px; border-radius: 50%; background: rgba(211,209,199,0.8); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: #5F5E5A; flex-shrink: 0; }
     .user-info { flex: 1; }
     .user-name { font-size: 14px; font-weight: 500; color: #2C2C2A; }
     .user-meta { font-size: 12px; color: #888780; }
-    .role-select {
-      font-size: 12px; padding: 4px 8px; border: 1px solid rgba(211,209,199,0.8);
-      border-radius: 6px; background: white; color: #444441; cursor: pointer;
-    }
+    .role-select { font-size: 12px; padding: 4px 8px; border: 1px solid rgba(211,209,199,0.8); border-radius: 6px; background: white; color: #444441; cursor: pointer; }
 
     /* ── АРХИВ ── */
-    .archive-item {
-      padding: 12px 24px; border-bottom: 1px solid rgba(211,209,199,0.3);
+    .archive-item { padding: 12px 24px; border-bottom: 1px solid rgba(211,209,199,0.3); }
+    .archive-item-title { font-size: 14px; font-weight: 500; color: #2C2C2A; margin-bottom: 4px; }
+    .archive-item-meta { font-size: 12px; color: #888780; margin-bottom: 8px; }
+    .archive-actions { display: flex; gap: 8px; }
+    .btn-unarchive { font-size: 11px; color: #639922; background: #EAF3DE; border: none; border-radius: 4px; padding: 4px 12px; cursor: pointer; transition: all 0.15s; }
+    .btn-unarchive:hover { background: #C0DD97; transform: scale(1.02); }
+    .btn-delete-archive { font-size: 11px; color: #A32D2D; background: #FCEBEB; border: none; border-radius: 4px; padding: 4px 12px; cursor: pointer; transition: all 0.15s; }
+    .btn-delete-archive:hover { background: #F7C1C1; transform: scale(1.02); }
+
+
+
+    /* ── АНИМАЦИИ ── */
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
     }
-    .archive-item-title { font-size: 14px; color: #5F5E5A; margin-bottom: 4px; }
-    .archive-item-meta { font-size: 12px; color: #B4B2A9; margin-bottom: 6px; }
-    .btn-unarchive {
-      font-size: 11px; color: #639922; background: #EAF3DE;
-      border: none; border-radius: 4px; padding: 3px 10px; cursor: pointer;
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
     }
-    .btn-unarchive:hover { background: #C0DD97; }
+
+    .dash-card {
+      background: rgba(255,255,255,0.7);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+      border: 1px solid rgba(211,209,199,0.4);
+    }
+    .dash-card-value { font-size: 28px; font-weight: 700; color: #2C2C2A; }
+    .dash-card-label { font-size: 11px; color: #888780; margin-top: 4px; }
+    .dash-bar-row {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+    }
+    .dash-bar-label { font-size: 12px; color: #444441; min-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dash-bar-track { flex: 1; height: 8px; background: rgba(211,209,199,0.4); border-radius: 4px; overflow: hidden; }
+    .dash-bar-fill { height: 100%; border-radius: 4px; background: #5F5E5A; transition: width 0.5s ease; }
+    .dash-bar-count { font-size: 12px; color: #888780; min-width: 24px; text-align: right; }
+    .activity-bar {
+      flex: 1; background: rgba(95,94,90,0.2); border-radius: 4px 4px 0 0;
+      transition: height 0.4s ease; position: relative; cursor: default;
+      min-width: 32px;
+    }
+    .activity-bar:hover { background: rgba(95,94,90,0.4); }
+    .activity-label { flex: 1; font-size: 10px; color: #888780; text-align: center; min-width: 32px; }
+    .priority-badge {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border-radius: 20px; font-size: 13px;
+    }
+
+    /* ── ДАШБОРД ── */
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+    .dash-card { background: rgba(255,255,255,0.7); border-radius: 12px; padding: 14px; text-align: center; border: 1px solid rgba(211,209,199,0.4); }
+    .dash-card-value { font-size: 28px; font-weight: 700; color: #2C2C2A; }
+    .dash-card-label { font-size: 11px; color: #888780; margin-top: 4px; }
+    .dash-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .dash-bar-label { font-size: 12px; color: #444441; min-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dash-bar-track { flex: 1; height: 8px; background: rgba(211,209,199,0.4); border-radius: 4px; overflow: hidden; }
+    .dash-bar-fill { height: 100%; border-radius: 4px; background: #5F5E5A; transition: width 0.5s ease; }
+    .dash-bar-count { font-size: 12px; color: #888780; min-width: 24px; text-align: right; }
+    .activity-bar { flex: 1; background: rgba(95,94,90,0.2); border-radius: 4px 4px 0 0; transition: height 0.4s ease; min-width: 32px; }
+    .activity-bar:hover { background: rgba(95,94,90,0.4); }
+    .activity-label { flex: 1; font-size: 10px; color: #888780; text-align: center; min-width: 32px; }
+    .priority-badge { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 20px; font-size: 13px; }
+
   </style>
 </head>
 <body>
 
+
+    <!-- ══════════════ МОДАЛКА ДАШБОРД ══════════════ !-->
+<div class="modal-overlay" id="dashboardModal">
+  <div class="modal" style="width:700px;max-width:95vw;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h2>📊 Дашборд</h2>
+      <button class="btn-cancel" onclick="closeDashboard()">✕</button>
+    </div>
+
+    <!-- Карточки сверху -->
+    <div id="dashCards" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;"></div>
+
+    <!-- График активности -->
+    <div style="margin-bottom:24px;">
+      <div style="font-size:12px;color:#888780;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Активность за 7 дней</div>
+      <div id="activityChart" style="display:flex;align-items:flex-end;gap:8px;height:80px;"></div>
+      <div id="activityLabels" style="display:flex;gap:8px;margin-top:4px;"></div>
+    </div>
+
+    <!-- По колонкам -->
+    <div style="margin-bottom:24px;">
+      <div style="font-size:12px;color:#888780;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">По колонкам</div>
+      <div id="dashColumns"></div>
+    </div>
+
+    <!-- По приоритетам -->
+    <div style="margin-bottom:24px;">
+      <div style="font-size:12px;color:#888780;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">По приоритетам</div>
+      <div id="dashPriorities" style="display:flex;gap:12px;flex-wrap:wrap;"></div>
+    </div>
+
+    <!-- По пользователям -->
+    <div id="dashUsersSection" style="display:none;">
+      <div style="font-size:12px;color:#888780;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Топ сотрудников</div>
+      <div id="dashUsers"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════════ ЛОГИН ══════════════ -->
 <div class="login-screen" id="loginScreen">
   <div class="login-card">
-    <h1>Task Manager</h1>
+    <h1 id="loginTitle">Task Manager</h1>
     <p>Войдите чтобы продолжить</p>
     <input type="text" id="loginUsername" placeholder="Логин" />
     <input type="password" id="loginPassword" placeholder="Пароль" onkeydown="if(event.key==='Enter')login()" />
@@ -370,25 +378,34 @@
 <!-- ══════════════ ПРИЛОЖЕНИЕ ══════════════ -->
 <div id="app" style="display:none;">
   <header>
-    <h1>Task Manager</h1>
+    <h1 id="systemName">Task Manager</h1>
     <div class="header-center">
       <div class="search-wrap">
         <span class="search-icon">🔍</span>
-        <input class="search-input" id="searchInput" placeholder="Поиск задач..." oninput="renderBoard(allColumns, allTasks)" />
+        <input class="search-input" id="searchInput" placeholder="Найти задачу..." oninput="renderBoard(allColumns, allTasks)" />
       </div>
     </div>
     <div class="header-right">
-      <span class="header-stats" id="headerStats"></span>
       <span class="user-badge" id="userBadge"></span>
+      <a href="/orgchart.html" class="header-btn" id="btnOrgChart" style="display:none;text-decoration:none;">🏢 Структура</a>
       <button class="header-btn" onclick="toggleArchive()">📦 Архив</button>
+      <button class="header-btn" id="btnStats" onclick="openStats()" style="display:none;">📊 Статистика</button>
       <button class="header-btn" id="btnUsers" onclick="toggleUsers()" style="display:none;">👥 Пользователи</button>
       <button class="header-btn" id="settingsToggle" onclick="toggleSettings()" style="display:none;">⚙ Настройки</button>
       <button class="header-btn" onclick="logout()">Выйти</button>
     </div>
   </header>
 
-  
   <div class="stats-bar" id="statsBar"></div>
+
+  <div class="filter-bar" id="filterBar">
+    <span class="filter-label">Показать:</span>
+    <button class="filter-btn active" onclick="setFilter('my')" id="filterMy">Мои задачи</button>
+    <button class="filter-btn" onclick="setFilter('all')" id="filterAll">Все задачи</button>
+    <select class="filter-user-select" id="filterUserSelect" onchange="setFilter('user', this.value)">
+      <option value="">Выбрать пользователя...</option>
+    </select>
+  </div>
 
   <div class="board-wrapper">
     <div class="board" id="board">
@@ -413,10 +430,12 @@
       <option value="medium" selected>🟡 Средний</option>
       <option value="high">🔴 Высокий</option>
     </select>
-    <label>Время</label>
-    <input type="text" id="taskTime" placeholder="Например 10:40" />
     <label>Дедлайн</label>
     <input type="date" id="taskDeadline" />
+    <div class="checkbox-row">
+      <input type="checkbox" id="taskChiefGoal" />
+      <label for="taskChiefGoal">В целях у Главного Специалиста</label>
+    </div>
     <div class="modal-buttons">
       <button class="btn-cancel" onclick="closeTaskModal()">Отмена</button>
       <button class="btn-primary" onclick="saveTask()">Сохранить</button>
@@ -439,6 +458,17 @@
   </div>
 </div>
 
+<!-- ══════════════ МОДАЛКА: СТАТИСТИКА ══════════════ -->
+<div class="modal-overlay" id="statsModal">
+  <div class="modal">
+    <h2>📊 Статистика по колонкам</h2>
+    <div id="statsContent"></div>
+    <div class="modal-buttons" style="margin-top:16px;">
+      <button class="btn-cancel" onclick="closeStats()">Закрыть</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════════ НАСТРОЙКИ ══════════════ -->
 <div class="side-panel panel-right" id="settingsPanel">
   <div class="panel-header">
@@ -446,23 +476,53 @@
     <button class="panel-close" onclick="toggleSettings()">✕</button>
   </div>
   <div class="panel-body">
+
+    <div class="settings-section">
+      <label>Название системы</label>
+      <input type="text" class="settings-input" id="systemNameInput" placeholder="Task Manager" />
+      <button class="btn-save-setting" onclick="saveSystemName()">Сохранить</button>
+    </div>
+
     <div class="settings-section">
       <label>Готовые темы</label>
       <div class="theme-grid">
-        <div class="theme-swatch active" style="background:#F5F0E8;" data-theme="beige" onclick="applyTheme('beige')"><span>Бежевая</span></div>
-        <div class="theme-swatch" style="background:#F0F4F8;" data-theme="blue" onclick="applyTheme('blue')"><span>Голубая</span></div>
-        <div class="theme-swatch" style="background:#F0F4F0;" data-theme="green" onclick="applyTheme('green')"><span>Зелёная</span></div>
-        <div class="theme-swatch" style="background:#FAF0F0;" data-theme="rose" onclick="applyTheme('rose')"><span>Розовая</span></div>
-        <div class="theme-swatch" style="background:#F5F5F0;" data-theme="gray" onclick="applyTheme('gray')"><span>Серая</span></div>
-        <div class="theme-swatch" style="background:#1A1A2E;" data-theme="dark" onclick="applyTheme('dark')"><span style="color:rgba(255,255,255,0.6)">Тёмная</span></div>
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#F5EDD6,#E8CDA0);" data-theme="sand" onclick="applyTheme('sand')"><span>Песок</span></div>
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#EEF0FB,#D8D2F0);" data-theme="lavender" onclick="applyTheme('lavender')"><span>Лаванда</span></div>
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#E8F5F0,#BFE2D8);" data-theme="mint" onclick="applyTheme('mint')"><span>Мята</span></div>
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#FDF0F0,#F5CEBF);" data-theme="peach" onclick="applyTheme('peach')"><span>Персик</span></div>
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#EEF2F7,#C8D6E8);" data-theme="steel" onclick="applyTheme('steel')"><span>Сталь</span></div>
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#1A1A2E,#0F3460);" data-theme="night" onclick="applyTheme('night')"><span style="color:rgba(255,255,255,0.7)">Ночь</span></div>
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#F5F0E8,#E8E2D8);" data-theme="beige" onclick="applyTheme('beige')"><span>Бежевая</span></div>
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#F0F4F8,#DDE8F0);" data-theme="blue" onclick="applyTheme('blue')"><span>Голубая</span></div>
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#FAF0F0,#F0DEDE);" data-theme="rose" onclick="applyTheme('rose')"><span>Розовая</span></div>
       </div>
     </div>
+
     <div class="settings-section">
-      <label>Цвета</label>
-      <div class="color-row"><span>Фон</span><input type="color" id="colorBg" value="#F5F0E8" oninput="applyCustomColor('bg', this.value)"></div>
+      <label>Свой градиент фона</label>
+      <div class="gradient-builder">
+        <div class="color-row">
+          <span>Цвет 1</span>
+          <input type="color" id="gradColor1" value="#F5EDD6" oninput="applyGradient()">
+        </div>
+        <div class="color-row">
+          <span>Цвет 2</span>
+          <input type="color" id="gradColor2" value="#E8CDA0" oninput="applyGradient()">
+        </div>
+        <div class="opacity-row">
+          <span>Угол</span>
+          <input type="range" id="gradAngle" min="0" max="360" value="135" oninput="applyGradient(); document.getElementById('gradAngleVal').textContent=this.value+'°'">
+          <span class="opacity-val" id="gradAngleVal">135°</span>
+        </div>  
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <label>Цвета элементов</label>
       <div class="color-row"><span>Шапка</span><input type="color" id="colorHeader" value="#EDE8DF" oninput="applyCustomColor('header', this.value)"></div>
       <div class="color-row"><span>Карточки</span><input type="color" id="colorCard" value="#FFFFFF" oninput="applyCustomColor('card', this.value)"></div>
     </div>
+
     <div class="settings-section">
       <label>Прозрачность</label>
       <div class="opacity-row">
@@ -481,6 +541,7 @@
         <span class="opacity-val" id="opacityCardVal">85%</span>
       </div>
     </div>
+
     <button class="btn-reset" onclick="resetTheme()">Сбросить к стандарту</button>
   </div>
 </div>
@@ -497,14 +558,15 @@
 <!-- ══════════════ АРХИВ ══════════════ -->
 <div class="side-panel panel-left" id="archivePanel">
   <div class="panel-header">
-    <h2>Архив задач - ⛔ НЕ РАБОТАЕТ</h2>
+    <h2>Архив задач</h2>
     <button class="panel-close" onclick="toggleArchive()">✕</button>
   </div>
   <div id="archiveList"></div>
 </div>
 
 <script>
-  const API = 'https://task-manager-production-3a5d.up.railway.app/api';
+  const API = 'http://127.0.0.1:8000/api';
+  const ROLE_HIERARCHY = { admin:5, chief:4, lead:3, specialist:2, junior:1 };
   let token = localStorage.getItem('token');
   let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
   let currentColumnId = null;
@@ -512,6 +574,9 @@
   let editingColumnId = null;
   let allTasks = [];
   let allColumns = [];
+  let allUsers = [];
+  let currentFilter = 'my';
+  let filterUserId = null;
   let draggedCard = null;
   let draggedTaskId = null;
   let draggedColEl = null;
@@ -561,23 +626,11 @@
     return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
   }
 
-  function canManage() {
-    return ['admin','chief','lead'].includes(currentUser?.role);
-  }
-
-  function showApp() {
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    document.getElementById('userBadge').textContent = currentUser?.full_name || currentUser?.username || '';
-    const canCol = ['admin','chief'].includes(currentUser?.role);
-    document.getElementById('btnAddColumn').style.display = canCol ? 'block' : 'none';
-    document.getElementById('settingsToggle').style.display = canCol ? 'block' : 'none';
-    document.getElementById('btnUsers').style.display = canManage() ? 'block' : 'none';
-    loadTheme();
-    loadBoard();
-    if (boardInterval) clearInterval(boardInterval);
-    boardInterval = setInterval(loadBoard, 5000);
-  }
+  function canManage() { return ['admin','chief','lead'].includes(currentUser?.role); }
+  function canCreateColumn() { return ['admin','chief'].includes(currentUser?.role); }
+  function canChangeRoles() { return ['admin','chief','lead'].includes(currentUser?.role); }
+  function isChief() { return ['admin','chief'].includes(currentUser?.role); }
+  function isSpecialist() { return currentUser?.role === 'specialist'; }
 
   // ══════════════════════════════
   //           ДОСКА
@@ -600,6 +653,106 @@
     } catch(e) { console.error(e); }
   }
 
+  async function showApp() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('userBadge').textContent = currentUser?.full_name || currentUser?.username || '';
+    document.getElementById('btnAddColumn').style.display = canCreateColumn() ? 'block' : 'none';
+    document.getElementById('settingsToggle').style.display = canManage() ? 'block' : 'none';
+    document.getElementById('btnUsers').style.display = canManage() ? 'block' : 'none';
+    document.getElementById('btnStats').style.display = canManage() ? 'block' : 'none';
+    const canSeeOrgChart = ['admin','chief','lead','specialist'].includes(currentUser?.role);
+document.getElementById('btnOrgChart').style.display = canSeeOrgChart ? 'block' : 'none';
+    if (currentUser?.role === 'specialist' || currentUser?.role === 'lead' || currentUser?.role === 'chief' || currentUser?.role === 'admin') {
+      document.getElementById('filterBar').classList.add('visible');
+      await loadFilterUsers();
+    }
+
+    currentFilter = 'my';
+    document.getElementById('filterMy')?.classList.add('active');
+
+    await loadBoardSettings();
+    loadTheme();
+    loadBoard();
+    if (boardInterval) clearInterval(boardInterval);
+    boardInterval = setInterval(loadBoard, 5000);
+  }
+
+  async function loadBoardSettings() {
+    try {
+      const res = await fetch(`${API}/board-settings/current/`, { headers: authHeaders() });
+      if (!res.ok) return;
+      const data = await res.json();
+      
+      if (data.system_name) {
+        document.getElementById('systemName').textContent = data.system_name;
+        document.getElementById('loginTitle').textContent = data.system_name;
+        document.title = data.system_name;
+        const input = document.getElementById('systemNameInput');
+        if (input) input.value = data.system_name;
+      }
+      
+      if (data.bg_gradient) {
+        document.body.style.background = data.bg_gradient;
+        const theme = {
+          grad: data.bg_gradient,
+          g1: data.bg_color1 || '#F5EDD6',
+          g2: data.bg_color2 || '#E8CDA0',
+          angle: data.bg_angle || 135,
+          header: data.header_color || '#EDE8DF',
+          card: data.card_color || '#FFFFFF'
+        };
+        localStorage.setItem('boardTheme', JSON.stringify(theme));
+        
+        if (data.bg_color1 && document.getElementById('gradColor1')) {
+          document.getElementById('gradColor1').value = data.bg_color1;
+          document.getElementById('gradColor2').value = data.bg_color2 || '#E8CDA0';
+          document.getElementById('gradAngle').value = data.bg_angle || 135;
+          document.getElementById('gradAngleVal').textContent = (data.bg_angle || 135) + '°';
+        }
+        if (data.header_color && document.getElementById('colorHeader')) {
+          document.getElementById('colorHeader').value = data.header_color;
+        }
+        if (data.card_color && document.getElementById('colorCard')) {
+          document.getElementById('colorCard').value = data.card_color;
+        }
+      }
+    } catch(e) { console.error(e); }
+  }
+
+  async function loadFilterUsers() {
+    const res = await fetch(`${API}/users/subordinates/`, { headers: authHeaders() });
+    if (!res.ok) return;
+    const data = await res.json();
+    allUsers = data.results || data;
+    const select = document.getElementById('filterUserSelect');
+    while (select.options.length > 1) select.remove(1);
+    allUsers.forEach(u => {
+      const opt = document.createElement('option');
+      opt.value = u.id;
+      opt.textContent = u.full_name || u.username;
+      select.appendChild(opt);
+    });
+  }
+
+  function setFilter(type, userId) {
+    currentFilter = type;
+    filterUserId = userId ? parseInt(userId) : null;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    if (type === 'my') document.getElementById('filterMy')?.classList.add('active');
+    if (type === 'all') document.getElementById('filterAll')?.classList.add('active');
+    if (type === 'user') document.getElementById('filterUserSelect').value = userId || '';
+    renderBoard(allColumns, allTasks);
+  }
+
+  function getFilteredTasks(tasks) {
+    if (currentFilter === 'all') return tasks;
+    if (currentFilter === 'user' && filterUserId) {
+      return tasks.filter(t => t.created_by === filterUserId);
+    }
+    return tasks.filter(t => t.created_by === currentUser?.id);
+  }
+
   function renderBoard(columns, tasks) {
     const board = document.getElementById('board');
     const btnAdd = document.getElementById('btnAddColumn');
@@ -611,9 +764,13 @@
     const colOp = (t.opacityColumn || 70) / 100;
     const search = document.getElementById('searchInput')?.value?.toLowerCase() || '';
 
+    const filteredTasks = getFilteredTasks(tasks);
+
     columns.forEach(col => {
-      let colTasks = tasks.filter(t => t.column === col.id);
-      if (search) colTasks = colTasks.filter(t => t.title.toLowerCase().includes(search) || (t.comment||'').toLowerCase().includes(search));
+      let colTasks = filteredTasks.filter(t => t.column === col.id);
+      if (search) colTasks = colTasks.filter(t =>
+        t.title.toLowerCase().includes(search) || (t.comment||'').toLowerCase().includes(search)
+      );
 
       const colEl = document.createElement('div');
       colEl.className = 'column' + (col.is_collapsed ? ' collapsed' : '');
@@ -621,15 +778,12 @@
       colEl.style.background = hexToRgba(col.color || '#E8E2D8', colOp);
 
       colEl.innerHTML = `
-        <div class="column-header">
+        <div class="column-header" style="cursor:${canManage()?'grab':'default'}">
           <span class="column-title">${col.name}</span>
           ${!col.is_collapsed ? `<span class="column-count">${colTasks.length}</span>` : ''}
           <div class="column-actions">
-            // <button class="col-btn" onclick="toggleCollapse(${col.id}, '${col.is_collapsed}')">${col.is_collapsed ? '' : ''}</button>
-            ${canManage() ? `
-                <button class="col-btn" onclick="openEditColumn(${col.id}, '${escHtml(col.name)}', '${col.color||'#E8E2D8'}')">✎</button>
-                <button class="col-btn" onclick="deleteColumn(${col.id})" style="color:#E24B4A;">✕</button>
-            ` : ''}
+            ${canManage() ? `<button class="col-btn" onclick="event.stopPropagation();openEditColumn(${col.id}, '${escHtml(col.name)}', '${col.color||'#E8E2D8'}')">✎</button>` : ''}
+            ${canCreateColumn() ? `<button class="col-btn" onclick="event.stopPropagation();deleteColumn(${col.id})" style="color:#E24B4A;">✕</button>` : ''}
           </div>
         </div>
         <div class="tasks" id="tasks-${col.id}">
@@ -638,11 +792,15 @@
         <button class="btn-add-task" onclick="openAddTask(${col.id})">+ Добавить задачу</button>
       `;
 
-      colEl.setAttribute('draggable', canManage() ? 'true' : 'false');
-      colEl.addEventListener('dragstart', onColDragStart);
-      colEl.addEventListener('dragend', onColDragEnd);
-      colEl.addEventListener('dragover', onColDragOver);
-      colEl.addEventListener('drop', onColDrop);
+      if (canManage()) {
+        colEl.setAttribute('draggable', 'true');
+        colEl.querySelector('.column-header').addEventListener('mousedown', () => { colEl.setAttribute('draggable', 'true'); });
+        colEl.addEventListener('dragstart', onColDragStart);
+        colEl.addEventListener('dragend', onColDragEnd);
+        colEl.addEventListener('dragover', onColDragOver);
+        colEl.addEventListener('drop', onColDrop);
+      }
+
       board.appendChild(colEl);
     });
 
@@ -660,17 +818,32 @@
   }
 
   function renderTask(task, cardColor, cardOp) {
-    const deadline = task.deadline ? deadlineInfo(task.deadline) : null;
+    const column = allColumns.find(col => col.id === task.column);
+    const isCompletedColumn = column?.name?.toLowerCase() === 'выполнено';
+    
+    const deadline = task.deadline && !isCompletedColumn ? deadlineInfo(task.deadline) : null;
     const bg = hexToRgba(cardColor, cardOp);
+    const isOtherUser = task.created_by !== currentUser?.id;
+    const isChiefGoal = task.is_chief_goal;
+
+    let classes = 'task-card';
+    if (isChiefGoal) classes += ' chief-goal';
+    else if (isOtherUser && isSpecialist()) classes += ' other-user';
+
     return `
-      <div class="task-card" style="background:${bg}" draggable="true" data-task-id="${task.id}" data-column-id="${task.column}">
+      <div class="${classes}" style="${isChiefGoal ? '' : `background:${bg}`}"
+           draggable="true" data-task-id="${task.id}" data-column-id="${task.column}">
         <div class="priority-bar priority-${task.priority}"></div>
         <div class="task-title">${escHtml(task.title)}</div>
         ${task.comment ? `<div class="task-comment">${escHtml(task.comment)}</div>` : ''}
         <div class="task-meta">
-          ${task.time ? `<span class="task-time">🕐 ${task.time}</span>` : ''}
-          ${deadline ? `<span class="task-deadline ${deadline.cls}">${deadline.label}</span>` : ''}
-          ${canManage() && task.created_by_name ? `<span>${task.created_by_name}</span>` : ''}
+          ${isCompletedColumn ? 
+            `<span class="task-deadline deadline-completed">✓ Выполнено</span>` : 
+            deadline ? `<span class="task-deadline ${deadline.cls}">${deadline.label}</span>` : ''
+          }
+          ${isChiefGoal ? `<span class="chief-goal-badge">⭐ В целях ГС</span>` : ''}
+          ${isOtherUser && isSpecialist() ? `<span class="other-user-badge">${task.created_by_name}</span>` : ''}
+          ${canManage() && task.created_by_name ? `<span style="color:#888780;font-size:11px;">${task.created_by_name}</span>` : ''}
         </div>
         <div class="task-footer">
           <button class="task-action-btn" onclick="openEditTask(${task.id})">✎ Изменить</button>
@@ -691,17 +864,22 @@
   }
 
   function updateStats() {
-    const total = allTasks.length;
-    const high = allTasks.filter(t => t.priority === 'high').length;
-    const overdue = allTasks.filter(t => t.deadline && new Date(t.deadline) < new Date()).length;
-    document.getElementById('headerStats').textContent =
-      `Задач: ${total}${high ? ` · 🔴 ${high}` : ''}${overdue ? ` · ⚠ ${overdue}` : ''}`;
     document.getElementById('statsBar').innerHTML = `
-      <span>Всего: <strong>${total}</strong></span>
+      <span>Всего задач: <strong>${allTasks.length}</strong></span>
       <span>Колонок: <strong>${allColumns.length}</strong></span>
-      <span>Высокий приоритет: <strong>${high}</strong></span>
-      ${overdue ? `<span style="color:#A32D2D">Просрочено: <strong>${overdue}</strong></span>` : ''}
     `;
+  }
+
+  async function saveSystemName() {
+    const name = document.getElementById('systemNameInput').value.trim();
+    if (!name) return;
+    await fetch(`${API}/board-settings/update_settings/`, {
+      method: 'PATCH', headers: authHeaders(),
+      body: JSON.stringify({ system_name: name })
+    });
+    document.getElementById('systemName').textContent = name;
+    document.getElementById('loginTitle').textContent = name;
+    document.title = name;
   }
 
   // ══════════════════════════════
@@ -713,9 +891,9 @@
     document.getElementById('taskModalTitle').textContent = 'Новая задача';
     document.getElementById('taskTitle').value = '';
     document.getElementById('taskComment').value = '';
-    document.getElementById('taskTime').value = '';
     document.getElementById('taskDeadline').value = '';
     document.getElementById('taskPriority').value = 'medium';
+    document.getElementById('taskChiefGoal').checked = false;
     document.getElementById('taskModal').classList.add('active');
   }
 
@@ -726,9 +904,9 @@
     document.getElementById('taskModalTitle').textContent = 'Редактировать задачу';
     document.getElementById('taskTitle').value = task.title;
     document.getElementById('taskComment').value = task.comment || '';
-    document.getElementById('taskTime').value = task.time || '';
     document.getElementById('taskDeadline').value = task.deadline || '';
     document.getElementById('taskPriority').value = task.priority || 'medium';
+    document.getElementById('taskChiefGoal').checked = task.is_chief_goal || false;
     document.getElementById('taskModal').classList.add('active');
   }
 
@@ -743,9 +921,9 @@
     const payload = {
       title,
       comment: document.getElementById('taskComment').value.trim(),
-      time: document.getElementById('taskTime').value.trim(),
       priority: document.getElementById('taskPriority').value,
       column: currentColumnId,
+      is_chief_goal: document.getElementById('taskChiefGoal').checked,
     };
     const deadline = document.getElementById('taskDeadline').value;
     if (deadline) payload.deadline = deadline;
@@ -758,8 +936,27 @@
   }
 
   async function archiveTask(taskId) {
-    await fetch(`${API}/tasks/${taskId}/archive/`, { method: 'POST', headers: authHeaders() });
-    loadBoard();
+    try {
+      const response = await fetch(`${API}/tasks/${taskId}/`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify({ is_archived: true })
+      });
+      
+      if (!response.ok) {
+        const res2 = await fetch(`${API}/tasks/${taskId}/archive/`, {
+          method: 'POST',
+          headers: authHeaders()
+        });
+        if (!res2.ok) throw new Error('Не удалось архивировать');
+      }
+      
+      await loadBoard();
+      showNotification('📦 Задача отправлена в архив', 'success');
+    } catch (error) {
+      console.error('Ошибка архивации:', error);
+      showNotification('❌ Не удалось архивировать задачу', 'error');
+    }
   }
 
   // ══════════════════════════════
@@ -769,46 +966,115 @@
   async function toggleArchive() {
     const panel = document.getElementById('archivePanel');
     panel.classList.toggle('open');
-    if (!panel.classList.contains('open')) return;
-    const res = await fetch(`${API}/tasks/?archived=true`, { headers: authHeaders() });
-    const data = await res.json();
-    const tasks = data.results || data;
-    const list = document.getElementById('archiveList');
-    if (!tasks.length) {
-      list.innerHTML = '<div style="padding:24px;color:#888780;font-size:14px;">Архив пуст</div>';
-      return;
+    if (panel.classList.contains('open')) {
+      await loadArchive();
     }
-    list.innerHTML = tasks.map(t => `
-      <div class="archive-item">
-        <div class="archive-item-title">${escHtml(t.title)}</div>
-        <div class="archive-item-meta">${t.created_by_name} · ${new Date(t.created_at).toLocaleDateString('ru')}</div>
-        <button class="btn-unarchive" onclick="unarchiveTask(${t.id})">Восстановить</button>
-      </div>
-    `).join('');
   }
 
-async function unarchiveTask(taskId) {
-    await fetch(`${API}/tasks/${taskId}/unarchive/`, {
-      method: 'POST', headers: authHeaders()
-    });
-    // Обновляем архив и доску
-    await loadBoard();
-    // Перезагружаем список архива
-    const res = await fetch(`${API}/tasks/?archived=true`, { headers: authHeaders() });
-    const data = await res.json();
-    const tasks = data.results || data;
-    const list = document.getElementById('archiveList');
-    if (!tasks.length) {
-      list.innerHTML = '<div style="padding:24px;color:#888780;font-size:14px;">Архив пуст</div>';
-      return;
+  async function loadArchive() {
+    try {
+      const res = await fetch(`${API}/tasks/?archived=true`, { headers: authHeaders() });
+      if (!res.ok) throw new Error('Ошибка загрузки архива');
+      const data = await res.json();
+      const tasks = (data.results || data).filter(t => t.is_archived === true);
+      const list = document.getElementById('archiveList');
+      
+      if (!tasks.length) {
+        list.innerHTML = '<div style="padding:24px;color:#888780;font-size:14px;text-align:center;">📭 Архив пуст</div>';
+        return;
+      }
+      
+      list.innerHTML = tasks.map(t => `
+        <div class="archive-item" data-task-id="${t.id}">
+          <div class="archive-item-title">📌 ${escHtml(t.title)}</div>
+          <div class="archive-item-meta">
+            👤 ${escHtml(t.created_by_name || 'Неизвестный')} · 
+            📅 ${new Date(t.created_at).toLocaleDateString('ru')}
+            ${t.deadline ? ` · ⏰ Дедлайн: ${new Date(t.deadline).toLocaleDateString('ru')}` : ''}
+          </div>
+          <div class="archive-actions">
+            <button class="btn-unarchive" data-id="${t.id}">↩ Восстановить</button>
+            <button class="btn-delete-archive" data-id="${t.id}">🗑 Удалить навсегда</button>
+          </div>
+        </div>
+      `).join('');
+      
+      document.querySelectorAll('.btn-unarchive').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          unarchiveTask(parseInt(btn.dataset.id));
+        });
+      });
+      
+      document.querySelectorAll('.btn-delete-archive').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteTask(parseInt(btn.dataset.id));
+        });
+      });
+    } catch (error) {
+      console.error('Ошибка загрузки архива:', error);
+      document.getElementById('archiveList').innerHTML = '<div style="padding:24px;color:#E24B4A;font-size:14px;">❌ Ошибка загрузки архива</div>';
     }
-    list.innerHTML = tasks.map(t => `
-      <div class="archive-item">
-        <div class="archive-item-title">${escHtml(t.title)}</div>
-        <div class="archive-item-meta">${t.created_by_name} · ${new Date(t.created_at).toLocaleDateString('ru')}</div>
-        <button class="btn-unarchive" onclick="unarchiveTask(${t.id})">Восстановить</button>
-      </div>
-    `).join('');
+  }
+
+  async function unarchiveTask(taskId) {
+    try {
+      const res = await fetch(`${API}/tasks/${taskId}/unarchive/`, {
+        method: 'POST',
+        headers: authHeaders()
+      });
+      if (!res.ok) throw new Error('Не удалось восстановить');
+      await loadBoard();
+      await loadArchive();
+      showNotification('✅ Задача восстановлена', 'success');
+    } catch (error) {
+      console.error('Ошибка восстановления:', error);
+      showNotification('❌ Не удалось восстановить задачу', 'error');
+    }
+  }
+
+  async function deleteTask(taskId) {
+    if (!confirm('⚠️ Задача будет удалена навсегда!')) return;
+    try {
+      const res = await fetch(`${API}/tasks/${taskId}/`, {
+        method: 'DELETE',
+        headers: authHeaders()
+      });
+      if (!res.ok) throw new Error('Не удалось удалить');
+      await loadArchive();
+      await loadBoard();
+      showNotification('🗑 Задача удалена', 'info');
+    } catch (error) {
+      console.error('Ошибка удаления:', error);
+      showNotification('❌ Не удалось удалить задачу', 'error');
+    }
+  }
+
+  function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 24px;
+      background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#E24B4A' : '#444441'};
+      color: white;
+      border-radius: 10px;
+      font-size: 14px;
+      z-index: 10000;
+      animation: slideIn 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      font-weight: 500;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+      notification.style.animation = 'slideOut 0.3s ease';
+      setTimeout(() => notification.remove(), 300);
+    }, 3000);
   }
 
   // ══════════════════════════════
@@ -856,20 +1122,117 @@ async function unarchiveTask(taskId) {
 
   async function deleteColumn(colId) {
     if (!confirm('Удалить колонку? Все задачи в ней тоже будут удалены.')) return;
-    await fetch(`${API}/columns/${colId}/`, {
-      method: 'DELETE', headers: authHeaders()
-    });
+    await fetch(`${API}/columns/${colId}/`, { method: 'DELETE', headers: authHeaders() });
     loadBoard();
   }
 
-  async function toggleCollapse(colId, isCollapsed) {
-    const collapsed = isCollapsed === true || isCollapsed === 'true';
-    await fetch(`${API}/columns/${colId}/`, {
-      method: 'PATCH', headers: authHeaders(),
-      body: JSON.stringify({ is_collapsed: !collapsed })
-    });
-    loadBoard();
+  // ══════════════════════════════
+  //       СТАТИСТИКА
+  // ══════════════════════════════
+
+async function openStats() {
+    document.getElementById('dashboardModal').classList.add('active');
+    try {
+      const res = await fetch(`${API}/tasks/dashboard/`, { headers: authHeaders() });
+      const d = await res.json();
+      renderDashboard(d);
+    } catch(e) { console.error(e); }
   }
+
+  function closeDashboard() {
+    document.getElementById('dashboardModal').classList.remove('active');
+  }
+
+  function closeStats() { closeDashboard(); }
+
+  function renderDashboard(d) {
+    // Карточки
+    document.getElementById('dashCards').innerHTML = `
+      <div class="dash-card">
+        <div class="dash-card-value">${d.total}</div>
+        <div class="dash-card-label">Всего задач</div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-card-value" style="color:#A32D2D;">${d.overdue}</div>
+        <div class="dash-card-label">Просрочено</div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-card-value" style="color:#E24B4A;">${d.chief_goals}</div>
+        <div class="dash-card-label">В целях ГС</div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-card-value" style="color:#888780;">${d.archived}</div>
+        <div class="dash-card-label">В архиве</div>
+      </div>
+    `;
+
+    // График активности
+    const maxActivity = Math.max(...d.activity.map(a => a.count), 1);
+    const chartEl = document.getElementById('activityChart');
+    const labelsEl = document.getElementById('activityLabels');
+    chartEl.innerHTML = '';
+    labelsEl.innerHTML = '';
+    d.activity.forEach(a => {
+      const height = Math.max((a.count / maxActivity) * 80, a.count > 0 ? 8 : 2);
+      const bar = document.createElement('div');
+      bar.className = 'activity-bar';
+      bar.style.height = height + 'px';
+      bar.title = `${a.date}: ${a.count} задач`;
+      chartEl.appendChild(bar);
+
+      const label = document.createElement('div');
+      label.className = 'activity-label';
+      const date = new Date(a.date);
+      label.textContent = `${date.getDate()}.${String(date.getMonth()+1).padStart(2,'0')}`;
+      labelsEl.appendChild(label);
+    });
+
+    // По колонкам
+    const maxCol = Math.max(...d.by_column.map(c => c.count), 1);
+    document.getElementById('dashColumns').innerHTML = d.by_column.map(c => `
+      <div class="dash-bar-row">
+        <span class="dash-bar-label">${c.column__name}</span>
+        <div class="dash-bar-track">
+          <div class="dash-bar-fill" style="width:${(c.count/maxCol)*100}%"></div>
+        </div>
+        <span class="dash-bar-count">${c.count}</span>
+      </div>
+    `).join('');
+
+    // По приоритетам
+    const priorityColors = { high: '#E24B4A', medium: '#EF9F27', low: '#639922' };
+    const priorityNames = { high: '🔴 Высокий', medium: '🟡 Средний', low: '🟢 Низкий' };
+    document.getElementById('dashPriorities').innerHTML = d.by_priority.map(p => `
+      <div class="priority-badge" style="background:${priorityColors[p.priority]}22;border:1px solid ${priorityColors[p.priority]}44;">
+        <span style="color:${priorityColors[p.priority]};font-weight:600;">${priorityNames[p.priority]||p.priority}</span>
+        <span style="font-size:16px;font-weight:700;color:#2C2C2A;">${p.count}</span>
+      </div>
+    `).join('');
+
+    // По пользователям
+    if (d.by_user && d.by_user.length > 0) {
+      const usersSection = document.getElementById('dashUsersSection');
+      usersSection.style.display = 'block';
+      const maxUser = Math.max(...d.by_user.map(u => u.count), 1);
+      document.getElementById('dashUsers').innerHTML = d.by_user.map(u => {
+        const name = [u.created_by__first_name, u.created_by__last_name].filter(Boolean).join(' ') || u.created_by__username;
+        return `
+          <div class="dash-bar-row">
+            <span class="dash-bar-label">${name}</span>
+            <div class="dash-bar-track">
+              <div class="dash-bar-fill" style="width:${(u.count/maxUser)*100}%;background:#9B8FD4;"></div>
+            </div>
+            <span class="dash-bar-count">${u.count}</span>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  function closeStats() {
+    document.getElementById('dashboardModal').classList.add('active');
+  }
+
   // ══════════════════════════════
   //       ПОЛЬЗОВАТЕЛИ
   // ══════════════════════════════
@@ -883,8 +1246,7 @@ async function unarchiveTask(taskId) {
     const users = data.results || data;
     const roles = { admin:'Admin', chief:'Главный специалист', lead:'Ведущий специалист', specialist:'Специалист', junior:'Младший специалист' };
     document.getElementById('usersList').innerHTML = users.map(u => {
-      const initials = ((u.first_name||'')[0]||(u.username||'')[0]||'?').toUpperCase() +
-                       ((u.last_name||'')[0]||'').toUpperCase();
+      const initials = ((u.first_name||'')[0]||(u.username||'')[0]||'?').toUpperCase() + ((u.last_name||'')[0]||'').toUpperCase();
       return `
         <div class="user-card">
           <div class="user-avatar">${initials}</div>
@@ -892,11 +1254,11 @@ async function unarchiveTask(taskId) {
             <div class="user-name">${u.full_name || u.username}</div>
             <div class="user-meta">${roles[u.role]||u.role}${u.telegram_username ? ' · @'+u.telegram_username : ''}</div>
           </div>
-          ${canManage() ? `
+          ${canChangeRoles() && ROLE_HIERARCHY[currentUser?.role] > ROLE_HIERARCHY[u.role] ? `
             <select class="role-select" onchange="changeRole(${u.id}, this.value)">
               ${Object.entries(roles).map(([v,l])=>`<option value="${v}"${u.role===v?' selected':''}>${l}</option>`).join('')}
             </select>
-          ` : ''}
+          ` : `<span style="font-size:12px;color:#888780;">${roles[u.role]||u.role}</span>`}
         </div>
       `;
     }).join('');
@@ -916,11 +1278,13 @@ async function unarchiveTask(taskId) {
     if (draggedColEl) return;
     draggedCard = e.currentTarget;
     draggedTaskId = draggedCard.dataset.taskId;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', draggedTaskId);
     setTimeout(() => draggedCard?.classList.add('dragging'), 0);
   }
 
-  function onDragEnd() {
-    draggedCard?.classList.remove('dragging');
+  function onDragEnd(e) {
+    if (draggedCard) draggedCard.classList.remove('dragging');
     document.querySelectorAll('.drag-placeholder').forEach(p => p.remove());
     document.querySelectorAll('.column').forEach(c => c.classList.remove('drag-over'));
     draggedCard = null; draggedTaskId = null;
@@ -929,6 +1293,7 @@ async function unarchiveTask(taskId) {
   function onDragOver(e) {
     if (draggedColEl) return;
     e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
     const zone = e.currentTarget;
     zone.closest('.column')?.classList.add('drag-over');
     document.querySelectorAll('.drag-placeholder').forEach(p => p.remove());
@@ -952,8 +1317,9 @@ async function unarchiveTask(taskId) {
     const newColId = parseInt(col?.dataset.colId);
     col?.classList.remove('drag-over');
     document.querySelectorAll('.drag-placeholder').forEach(p => p.remove());
-    if (!draggedTaskId || !newColId) return;
-    await fetch(`${API}/tasks/${draggedTaskId}/`, {
+    const taskId = draggedTaskId || e.dataTransfer.getData('text/plain');
+    if (!taskId || !newColId) return;
+    await fetch(`${API}/tasks/${taskId}/`, {
       method: 'PATCH', headers: authHeaders(), body: JSON.stringify({ column: newColId })
     });
     loadBoard();
@@ -972,24 +1338,28 @@ async function unarchiveTask(taskId) {
   // ══════════════════════════════
 
   function onColDragStart(e) {
-    if (e.target.closest('.task-card') || e.target.closest('.col-btn')) return;
+    if (e.target.closest('.task-card') || e.target.closest('.col-btn') || e.target.closest('.btn-add-task')) return;
     draggedColEl = e.currentTarget;
-    setTimeout(() => draggedColEl?.classList.add('dragging-col'), 0);
+    e.dataTransfer.effectAllowed = 'move';
+    setTimeout(() => draggedColEl?.classList.add('col-dragging'), 0);
   }
 
-  function onColDragEnd() {
-    draggedColEl?.classList.remove('dragging-col');
+  function onColDragEnd(e) {
+    draggedColEl?.classList.remove('col-dragging');
     draggedColEl = null;
   }
 
   function onColDragOver(e) {
     if (!draggedColEl) return;
     e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
     const target = e.currentTarget;
-    if (target === draggedColEl || target.classList.contains('btn-add-column')) return;
+    if (target === draggedColEl) return;
     const board = document.getElementById('board');
     const cols = [...board.querySelectorAll('.column')];
-    if (cols.indexOf(draggedColEl) < cols.indexOf(target)) board.insertBefore(draggedColEl, target.nextSibling);
+    const dragRect = draggedColEl.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    if (dragRect.left < targetRect.left) board.insertBefore(draggedColEl, target.nextSibling);
     else board.insertBefore(draggedColEl, target);
   }
 
@@ -1005,46 +1375,122 @@ async function unarchiveTask(taskId) {
   }
 
   // ══════════════════════════════
-  //         НАСТРОЙКИ
+  //         НАСТРОЙКИ ТЕМЫ
   // ══════════════════════════════
 
   const themes = {
-    beige: { bg:'#F5F0E8', column:'#E8E2D8', header:'#EDE8DF', card:'#FFFFFF' },
-    blue:  { bg:'#F0F4F8', column:'#DDE8F0', header:'#E8EEF5', card:'#FFFFFF' },
-    green: { bg:'#F0F4F0', column:'#DDE8DD', header:'#E8F0E8', card:'#FFFFFF' },
-    rose:  { bg:'#FAF0F0', column:'#F0DEDE', header:'#F5E8E8', card:'#FFF8F8' },
-    gray:  { bg:'#F5F5F0', column:'#E5E5E0', header:'#EDEDEA', card:'#FFFFFF' },
-    dark:  { bg:'#1A1A2E', column:'#16213E', header:'#0F3460', card:'#1E2A45' },
+    sand:     { grad: 'linear-gradient(135deg,#F5EDD6,#E8CDA0)', header: '#EDE8DF', card: '#FFFFFF', g1:'#F5EDD6', g2:'#E8CDA0', angle:135 },
+    lavender: { grad: 'linear-gradient(135deg,#EEF0FB,#D8D2F0)', header: '#E4E0F7', card: '#FFFFFF', g1:'#EEF0FB', g2:'#D8D2F0', angle:135 },
+    mint:     { grad: 'linear-gradient(135deg,#E8F5F0,#BFE2D8)', header: '#D4EDE6', card: '#FFFFFF', g1:'#E8F5F0', g2:'#BFE2D8', angle:135 },
+    peach:    { grad: 'linear-gradient(135deg,#FDF0F0,#F5CEBF)', header: '#F9E0D8', card: '#FFF8F5', g1:'#FDF0F0', g2:'#F5CEBF', angle:135 },
+    steel:    { grad: 'linear-gradient(135deg,#EEF2F7,#C8D6E8)', header: '#DDE5F0', card: '#FFFFFF', g1:'#EEF2F7', g2:'#C8D6E8', angle:135 },
+    night:    { grad: 'linear-gradient(135deg,#1A1A2E,#0F3460)', header: '#0F3460', card: '#1E2A45', g1:'#1A1A2E', g2:'#0F3460', angle:135 },
+    beige:    { grad: 'linear-gradient(135deg,#F5F0E8,#E8E2D8)', header: '#EDE8DF', card: '#FFFFFF', g1:'#F5F0E8', g2:'#E8E2D8', angle:135 },
+    blue:     { grad: 'linear-gradient(135deg,#F0F4F8,#DDE8F0)', header: '#E8EEF5', card: '#FFFFFF', g1:'#F0F4F8', g2:'#DDE8F0', angle:135 },
+    rose:     { grad: 'linear-gradient(135deg,#FAF0F0,#F0DEDE)', header: '#F5E8E8', card: '#FFF8F8', g1:'#FAF0F0', g2:'#F0DEDE', angle:135 },
   };
 
   function toggleSettings() { document.getElementById('settingsPanel').classList.toggle('open'); }
 
-  function applyTheme(name) {
-    const t = themes[name]; if (!t) return;
-    const saved = JSON.parse(localStorage.getItem('boardTheme')||'{}');
-    const merged = { ...saved, ...t };
-    saveTheme(merged); applyColors(merged);
-    document.getElementById('colorBg').value = t.bg;
+  async function applyTheme(name) {
+    const t = themes[name]; 
+    if (!t) return;
+    
+    document.body.style.background = t.grad;
+    document.getElementById('gradColor1').value = t.g1;
+    document.getElementById('gradColor2').value = t.g2;
+    document.getElementById('gradAngle').value = t.angle;
+    document.getElementById('gradAngleVal').textContent = t.angle + '°';
     document.getElementById('colorHeader').value = t.header;
     document.getElementById('colorCard').value = t.card;
+    
+    const merged = { ...t };
+    saveTheme(merged);
+    applyColors(merged);
+    
     document.querySelectorAll('.theme-swatch').forEach(s => s.classList.remove('active'));
     document.querySelector(`[data-theme="${name}"]`)?.classList.add('active');
+    
+    if (canManage()) {
+      await fetch(`${API}/board-settings/update_settings/`, {
+        method: 'PATCH', 
+        headers: authHeaders(),
+        body: JSON.stringify({ 
+          bg_gradient: t.grad,
+          bg_color1: t.g1,
+          bg_color2: t.g2,
+          bg_angle: t.angle,
+          header_color: t.header, 
+          card_color: t.card 
+        })
+      });
+    }
   }
 
-  function applyCustomColor(type, value) {
+  async function applyGradient() {
+    const g1 = document.getElementById('gradColor1').value;
+    const g2 = document.getElementById('gradColor2').value;
+    const angle = document.getElementById('gradAngle').value;
+    const grad = `linear-gradient(${angle}deg,${g1},${g2})`;
+    document.body.style.background = grad;
+    
     const c = JSON.parse(localStorage.getItem('boardTheme')||'{}');
-    c[type] = value; saveTheme(c); applyColors(c);
+    c.grad = grad; 
+    c.g1 = g1; 
+    c.g2 = g2; 
+    c.angle = parseInt(angle);
+    saveTheme(c);
+    document.querySelectorAll('.theme-swatch').forEach(s => s.classList.remove('active'));
+    
+    if (canManage()) {
+      await fetch(`${API}/board-settings/update_settings/`, {
+        method: 'PATCH', 
+        headers: authHeaders(),
+        body: JSON.stringify({ 
+          bg_gradient: grad,
+          bg_color1: g1,
+          bg_color2: g2,
+          bg_angle: parseInt(angle)
+        })
+      });
+    }
   }
 
-  function applyOpacity(type, value) {
+  async function applyCustomColor(type, value) {
+    const c = JSON.parse(localStorage.getItem('boardTheme')||'{}');
+    c[type] = value; 
+    saveTheme(c); 
+    applyColors(c);
+    
+    if (canManage()) {
+      const payload = type === 'header' ? { header_color: value } : { card_color: value };
+      await fetch(`${API}/board-settings/update_settings/`, {
+        method: 'PATCH', 
+        headers: authHeaders(),
+        body: JSON.stringify(payload)
+      });
+    }
+  }
+
+  async function applyOpacity(type, value) {
     document.getElementById(`opacity${type}Val`).textContent = value + '%';
     const c = JSON.parse(localStorage.getItem('boardTheme')||'{}');
-    c[`opacity${type}`] = parseInt(value); saveTheme(c);
+    c[`opacity${type}`] = parseInt(value); 
+    saveTheme(c);
     renderBoard(allColumns, allTasks);
+    
+    if (canManage()) {
+      await fetch(`${API}/board-settings/update_settings/`, {
+        method: 'PATCH', 
+        headers: authHeaders(),
+        body: JSON.stringify({ [`bg_opacity_${type.toLowerCase()}`]: parseInt(value) })
+      });
+    }
   }
 
   function applyColors(t) {
-    if (t.bg) document.body.style.backgroundColor = t.bg;
+    if (t.grad) document.body.style.background = t.grad;
+    else if (t.bg) document.body.style.backgroundColor = t.bg;
     if (t.header) {
       const op = (t.opacityHeader || 85) / 100;
       const h = document.querySelector('header');
@@ -1059,15 +1505,20 @@ async function unarchiveTask(taskId) {
     const saved = localStorage.getItem('boardTheme');
     if (!saved) return;
     const t = JSON.parse(saved);
-    if (t.bg) document.body.style.backgroundColor = t.bg;
+    if (t.grad) document.body.style.background = t.grad;
+    else if (t.bg) document.body.style.backgroundColor = t.bg;
     if (t.header) {
       const h = document.querySelector('header');
       if (h) h.style.background = hexToRgba(t.header, (t.opacityHeader||85)/100);
     }
-    ['Bg','Header','Card'].forEach(k => {
-      const el = document.getElementById(`color${k}`);
-      if (el && t[k.toLowerCase()]) el.value = t[k.toLowerCase()];
-    });
+    if (t.g1 && document.getElementById('gradColor1')) document.getElementById('gradColor1').value = t.g1;
+    if (t.g2 && document.getElementById('gradColor2')) document.getElementById('gradColor2').value = t.g2;
+    if (t.angle && document.getElementById('gradAngle')) {
+      document.getElementById('gradAngle').value = t.angle;
+      document.getElementById('gradAngleVal').textContent = t.angle + '°';
+    }
+    if (t.header && document.getElementById('colorHeader')) document.getElementById('colorHeader').value = t.header;
+    if (t.card && document.getElementById('colorCard')) document.getElementById('colorCard').value = t.card;
     ['Header','Column','Card'].forEach(k => {
       const el = document.getElementById(`opacity${k}`);
       const val = t[`opacity${k}`];

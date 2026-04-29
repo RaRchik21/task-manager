@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Органиграмма</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #F5EDD6, #E8CDA0);
+      color: #2C2C2A;
+      min-height: 100vh;
+    }
+
+    header {
+      background: rgba(237,232,223,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(211,209,199,0.6);
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    header h1 { font-size: 16px; font-weight: 700; color: #2C2C2A; }
+    .header-right { display: flex; align-items: center; gap: 8px; }
+    .header-btn {
+      background: rgba(255,255,255,0.5); border: 1px solid rgba(211,209,199,0.8);
+      border-radius: 8px; padding: 4px 12px; font-size: 13px; color: #5F5E5A;
+      cursor: pointer; transition: all 0.15s; text-decoration: none;
+    }
+    .header-btn:hover { background: rgba(232,226,216,0.8); }
+
+    .page-content { padding: 32px 24px; }
+
+    /* ── ДЕРЕВО ── */
+    .org-tree {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      overflow-x: auto;
+      padding-bottom: 40px;
+    }
+
+    .org-level {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      position: relative;
+      padding: 20px 0;
+    }
+
+    /* ── КАРТОЧКА ПОЛЬЗОВАТЕЛЯ ── */
+    .org-card {
+      background: rgba(255,255,255,0.9);
+      backdrop-filter: blur(8px);
+      border-radius: 12px;
+      padding: 12px 16px;
+      min-width: 160px;
+      max-width: 200px;
+      border: 1px solid rgba(211,209,199,0.6);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      text-align: center;
+      position: relative;
+      transition: box-shadow 0.15s;
+    }
+    .org-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    .org-card.drag-over { border: 2px dashed #5F5E5A; background: rgba(232,226,216,0.9); }
+
+    .org-avatar {
+      width: 44px; height: 44px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 600; margin: 0 auto 8px;
+    }
+    .role-chief .org-avatar { background: #E6F1FB; color: #185FA5; }
+    .role-lead .org-avatar { background: #EEF0FB; color: #534AB7; }
+    .role-specialist .org-avatar { background: #EAF3DE; color: #3B6D11; }
+    .role-senior .org-avatar { background: #FAEEDA; color: #854F0B; }
+    .role-junior .org-avatar { background: #F1EFE8; color: #5F5E5A; }
+    .role-admin .org-avatar { background: #FCEBEB; color: #A32D2D; }
+
+    .org-name { font-size: 13px; font-weight: 600; color: #2C2C2A; margin-bottom: 2px; }
+    .org-role { font-size: 11px; color: #888780; margin-bottom: 8px; }
+
+    .org-card-actions { display: flex; gap: 4px; justify-content: center; }
+    .org-select {
+      font-size: 11px; padding: 3px 6px; border: 1px solid rgba(211,209,199,0.8);
+      border-radius: 6px; background: rgba(245,240,232,0.8); color: #444441;
+      cursor: pointer; outline: none; max-width: 140px;
+    }
+    .btn-save-supervisor {
+      font-size: 11px; padding: 3px 8px; background: #444441; color: white;
+      border: none; border-radius: 6px; cursor: pointer;
+    }
+    .btn-save-supervisor:hover { background: #2C2C2A; }
+
+    /* ── ЛИНИИ ДЕРЕВА ── */
+    .org-connector {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .connector-line {
+      width: 2px;
+      height: 20px;
+      background: rgba(180,178,169,0.6);
+    }
+    .connector-branch {
+      display: flex;
+      align-items: flex-start;
+      position: relative;
+    }
+
+    /* ── ГРУППЫ ── */
+    .org-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
+    .children-row {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      position: relative;
+    }
+
+    .children-row::before { display: none; }
+    
+    .child-branch {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .child-branch::before {
+      content: '';
+      width: 2px;
+      height: 20px;
+      background: rgba(180,178,169,0.6);
+    }
+
+    /* ── НЕНАЗНАЧЕННЫЕ ── */
+    .unassigned-section {
+      margin-top: 48px;
+      padding: 24px;
+      background: rgba(255,255,255,0.5);
+      border-radius: 16px;
+      border: 1px dashed rgba(180,178,169,0.6);
+    }
+    .unassigned-title {
+      font-size: 13px; color: #888780; margin-bottom: 16px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .unassigned-list {
+      display: flex; flex-wrap: wrap; gap: 12px;
+    }
+
+    /* ── ЛЕГЕНДА ── */
+    .legend {
+      display: flex; gap: 12px; flex-wrap: wrap;
+      margin-bottom: 24px; padding: 16px;
+      background: rgba(255,255,255,0.5);
+      border-radius: 12px;
+      border: 1px solid rgba(211,209,199,0.4);
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #5F5E5A; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+
+    /* ── МОДАЛКА РЕДАКТИРОВАНИЯ ── */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.25); backdrop-filter: blur(4px); z-index: 100; align-items: center; justify-content: center; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: rgba(245,240,232,0.97); border-radius: 18px; padding: 24px; width: 380px; border: 1px solid rgba(211,209,199,0.6); box-shadow: 0 20px 60px rgba(0,0,0,0.12); }
+    .modal h2 { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+    .modal label { font-size: 12px; color: #888780; display: block; margin-bottom: 4px; }
+    .modal select { width: 100%; padding: 8px 12px; border: 1px solid rgba(211,209,199,0.8); border-radius: 10px; font-size: 14px; background: rgba(255,255,255,0.7); margin-bottom: 12px; outline: none; }
+    .modal select:focus { background: white; border-color: #888780; }
+    .modal-buttons { display: flex; gap: 8px; justify-content: flex-end; }
+    .btn-primary { background: #444441; color: white; border: none; border-radius: 10px; padding: 8px 18px; font-size: 14px; cursor: pointer; }
+    .btn-primary:hover { background: #2C2C2A; }
+    .btn-cancel { background: none; border: 1px solid rgba(211,209,199,0.8); border-radius: 10px; padding: 8px 16px; font-size: 14px; cursor: pointer; color: #5F5E5A; }
+    .btn-cancel:hover { background: rgba(232,226,216,0.8); }
+
+    .loading { text-align: center; padding: 48px; color: #888780; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1 id="pageTitle">Органиграмма</h1>
+  <div class="header-right">
+    <a href="/index.html" class="header-btn">← На доску</a>
+  </div>
+</header>
+
+<div class="page-content">
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#185FA5;"></div>Главный специалист</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#534AB7;"></div>Ведущий специалист</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#3B6D11;"></div>Специалист</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#854F0B;"></div>Старший специалист</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#5F5E5A;"></div>Младший специалист</div>
+  </div>
+
+  <div id="orgTree" class="org-tree">
+    <div class="loading">Загрузка...</div>
+  </div>
+
+  <div id="unassignedSection" class="unassigned-section" style="display:none;">
+    <div class="unassigned-title">Без руководителя</div>
+    <div class="unassigned-list" id="unassignedList"></div>
+  </div>
+</div>
+
+<!-- МОДАЛКА РЕДАКТИРОВАНИЯ -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <h2 id="editModalTitle">Изменить руководителя</h2>
+    <label>Руководитель</label>
+    <select id="supervisorSelect">
+      <option value="">— Без руководителя —</option>
+    </select>
+    <div class="modal-buttons">
+      <button class="btn-cancel" onclick="closeEditModal()">Отмена</button>
+      <button class="btn-primary" onclick="saveSupervisor()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = 'http://127.0.0.1:8000/api';
+  const token = localStorage.getItem('token');
+  const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+  let allUsers = [];
+  let editingUserId = null;
+
+  const ROLE_NAMES = {
+    admin: 'Admin',
+    chief: 'Главный специалист',
+    lead: 'Ведущий специалист',
+    specialist: 'Специалист',
+    senior: 'Старший специалист',
+    junior: 'Младший специалист',
+  };
+
+  const ROLE_ORDER = ['admin', 'chief', 'lead', 'specialist', 'senior', 'junior'];
+
+  function authHeaders() {
+    return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+  }
+
+  function isChief() {
+    return ['admin', 'chief', 'lead'].includes(currentUser?.role);
+  }
+  function getInitials(user) {
+    const f = (user.first_name || '')[0] || '';
+    const l = (user.last_name || '')[0] || '';
+    return (f + l).toUpperCase() || (user.username || '?')[0].toUpperCase();
+  }
+
+  // ══════════════════════════════
+  //         ЗАГРУЗКА ДАННЫХ
+  // ══════════════════════════════
+
+
+  async function toggleHideUser(userId, isHidden) {
+    const res = await fetch(`${API}/users/${userId}/`, {
+      method: 'PATCH',
+      headers: authHeaders(),
+      body: JSON.stringify({ is_hidden: !isHidden })
+    });
+    if (res.ok) await loadData();
+  }
+
+
+  async function loadData() {
+    if (!token) { window.location.href = '/index.html'; return; }
+    try {
+      const res = await fetch(`${API}/users/`, { headers: authHeaders() });
+      if (res.status === 401) { window.location.href = '/index.html'; return; }
+      const data = await res.json();
+      allUsers = data.results || data;
+      renderTree();
+    } catch(e) {
+      document.getElementById('orgTree').innerHTML = '<div class="loading">Ошибка загрузки</div>';
+    }
+  }
+
+  // ══════════════════════════════
+  //         РЕНДЕР ДЕРЕВА
+  // ══════════════════════════════
+
+  function renderTree() {
+    const tree = document.getElementById('orgTree');
+    tree.innerHTML = '';
+
+    // Находим корневых (без supervisor или chief/admin)
+    const chiefs = allUsers.filter(u => (u.role === 'chief' || u.role === 'admin') && !u.is_hidden);
+    const assigned = new Set();
+
+    if (chiefs.length === 0) {
+      tree.innerHTML = '<div class="loading">Нет пользователей с ролью Главный специалист</div>';
+      renderUnassigned(assigned);
+      return;
+    }
+
+    chiefs.forEach(chief => {
+      assigned.add(chief.id);
+      const group = buildGroupEl(chief, assigned);
+      tree.appendChild(group);
+    });
+
+    renderUnassigned(assigned);
+  }
+
+function buildGroupEl(user, assigned) {
+    const children = allUsers.filter(u => u.supervisor === user.id);
+    children.forEach(c => assigned.add(c.id));
+
+    const group = document.createElement('div');
+    group.className = 'org-group';
+
+    const cardEl = createCardEl(user);
+    group.appendChild(cardEl);
+
+    if (children.length > 0) {
+      const lineDown = document.createElement('div');
+      lineDown.className = 'connector-line';
+      group.appendChild(lineDown);
+
+      const childRow = document.createElement('div');
+      childRow.className = 'children-row';
+      childRow.style.position = 'relative';
+
+      children.forEach((child, idx) => {
+        const childBranch = document.createElement('div');
+        childBranch.className = 'child-branch';
+        childBranch.style.position = 'relative';
+
+        // Вертикальная линия сверху каждого ребёнка
+        const vLine = document.createElement('div');
+        vLine.style.cssText = 'width:2px;height:20px;background:rgba(180,178,169,0.6);margin:0 auto;';
+        childBranch.appendChild(vLine);
+
+        const childGroup = buildGroupEl(child, assigned);
+        childBranch.appendChild(childGroup);
+        childRow.appendChild(childBranch);
+      });
+
+      group.appendChild(childRow);
+
+      // Горизонтальная линия рисуется после добавления в DOM
+      requestAnimationFrame(() => {
+        const branches = childRow.querySelectorAll(':scope > .child-branch');
+        if (branches.length < 2) return;
+        const first = branches[0].getBoundingClientRect();
+        const last = branches[branches.length - 1].getBoundingClientRect();
+        const parent = childRow.getBoundingClientRect();
+        const hLine = document.createElement('div');
+        hLine.style.cssText = `
+          position:absolute;
+          top:0;
+          left:${first.left - parent.left + first.width/2}px;
+          width:${last.left - first.left}px;
+          height:2px;
+          background:rgba(180,178,169,0.6);
+          pointer-events:none;
+        `;
+        childRow.appendChild(hLine);
+      });
+    }
+
+    return group;
+  }
+
+function createCardEl(user) {
+    const card = document.createElement('div');
+    card.className = `org-card role-${user.role}`;
+    card.dataset.userId = user.id;
+
+    const initials = getInitials(user);
+    const roleName = ROLE_NAMES[user.role] || user.role;
+    const fullName = user.full_name || user.username;
+
+    const canEdit = isChief() && user.role !== 'admin';
+    const isChiefRole = user.role === 'chief';
+
+    card.innerHTML = `
+      <div class="org-avatar">${initials}</div>
+      <div class="org-name">${fullName}</div>
+      <div class="org-role">${roleName}</div>
+      <div class="org-card-actions" style="flex-direction:column;gap:4px;">
+        ${canEdit ? `<button class="btn-save-supervisor" onclick="openEditModal(${user.id})">Изменить руководителя</button>` : ''}
+        ${canEdit && isChiefRole ? `
+          <button class="btn-save-supervisor" style="background:${user.is_hidden ? '#3B6D11' : '#888780'};" 
+            onclick="toggleHideUser(${user.id}, ${user.is_hidden})">
+            ${user.is_hidden ? '👁 Показать' : '🙈 Скрыть'}
+          </button>
+        ` : ''}
+      </div>
+    `;
+
+    return card;
+  }
+
+  function renderUnassigned(assigned) {
+    const unassigned = allUsers.filter(u =>
+      !assigned.has(u.id) && (u.role !== 'chief' && u.role !== 'admin' || u.is_hidden)
+    );
+
+    const section = document.getElementById('unassignedSection');
+    const list = document.getElementById('unassignedList');
+
+    if (unassigned.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+
+    section.style.display = 'block';
+    list.innerHTML = '';
+
+    unassigned.forEach(user => {
+      const card = createCardEl(user);
+      list.appendChild(card);
+    });
+  }
+
+  // ══════════════════════════════
+  //         РЕДАКТИРОВАНИЕ
+  // ══════════════════════════════
+
+  function openEditModal(userId) {
+    editingUserId = userId;
+    const user = allUsers.find(u => u.id === userId);
+    if (!user) return;
+
+    document.getElementById('editModalTitle').textContent = `Руководитель: ${user.full_name || user.username}`;
+
+    // Заполняем выпадающий список — только те кто выше по роли
+    const select = document.getElementById('supervisorSelect');
+    select.innerHTML = '<option value="">— Без руководителя —</option>';
+
+    const ROLE_HIERARCHY = { admin:6, chief:5, lead:4, specialist:3, senior:2, junior:1 };
+    const userLevel = ROLE_HIERARCHY[user.role] || 0;
+
+    // Нельзя назначить себя или подчинённых руководителем
+    const subordinateIds = getSubordinateIds(userId);
+
+    allUsers
+      .filter(u => u.id !== userId && !subordinateIds.has(u.id) && (ROLE_HIERARCHY[u.role] || 0) > userLevel)
+      .forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.id;
+        opt.textContent = `${u.full_name || u.username} (${ROLE_NAMES[u.role] || u.role})`;
+        if (u.id === user.supervisor) opt.selected = true;
+        select.appendChild(opt);
+      });
+
+    document.getElementById('editModal').classList.add('active');
+  }
+
+  function getSubordinateIds(userId) {
+    const result = new Set();
+    const queue = [userId];
+    while (queue.length) {
+      const id = queue.shift();
+      allUsers.filter(u => u.supervisor === id).forEach(u => {
+        result.add(u.id);
+        queue.push(u.id);
+      });
+    }
+    return result;
+  }
+
+  function closeEditModal() {
+    document.getElementById('editModal').classList.remove('active');
+    editingUserId = null;
+  }
+
+  async function saveSupervisor() {
+    const supervisorId = document.getElementById('supervisorSelect').value;
+    const payload = { supervisor: supervisorId ? parseInt(supervisorId) : null };
+
+    const res = await fetch(`${API}/users/${editingUserId}/`, {
+      method: 'PATCH',
+      headers: authHeaders(),
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      closeEditModal();
+      await loadData();
+    }
+  }
+
+  // ══════════════════════════════
+  //           СТАРТ
+  // ══════════════════════════════
+
+  loadData();
+</script>
+</body>
+</html>

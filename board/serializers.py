@@ -6,7 +6,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'first_name', 'last_name', 'full_name', 'role', 'telegram_username', 'supervisor']
+        fields = ['id', 'username', 'first_name', 'last_name', 'full_name', 
+          'role', 'telegram_username', 'supervisor', 'is_hidden']
         read_only_fields = ['id']
 
     def get_full_name(self, obj):
@@ -39,15 +40,18 @@ class TaskSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Task
-        fields = ['id', 'title', 'time', 'comment', 'priority', 'deadline',
-                  'is_archived', 'column', 'created_by', 'created_by_name', 'created_at']
+        fields = ['id', 'title', 'comment', 'priority', 'deadline',
+                  'is_archived', 'is_chief_goal', 'column', 'created_by',
+                  'created_by_name', 'created_at']
         read_only_fields = ['id', 'created_by', 'created_at']
 
     def get_created_by_name(self, obj):
         return obj.created_by.get_full_name_display()
-
+    
 
 class BoardSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = BoardSettings
-        fields = ['id', 'bg_color', 'header_color', 'card_color', 'updated_at']
+        fields = ['system_name', 'bg_gradient', 'bg_color1', 'bg_color2', 'bg_angle', 
+                  'header_color', 'card_color', 'bg_opacity_header', 
+                  'bg_opacity_column', 'bg_opacity_card']
