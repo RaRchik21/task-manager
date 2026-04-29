@@ -50,6 +50,21 @@ def create_test_users(request):
     
     return JsonResponse({'users': results, 'message': 'Готово! Теперь можно входить'})
 
+
+
+from django.http import JsonResponse
+from django.core.management import call_command
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
+def migrate_db(request):
+    try:
+        call_command('migrate', interactive=False)
+        return JsonResponse({'status': 'success', 'message': 'Миграции выполнены'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'error': str(e)})
+    
+    
 class IsAdmin(BasePermission):
     def has_permission(self, request, view):
         return request.user.role == 'admin'
