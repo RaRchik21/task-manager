@@ -16,6 +16,13 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 # 1. Разрешенные хосты (у вас уже может быть заполнено)
 ALLOWED_HOSTS = ['*']
 
+# Добавьте CSRF_TRUSTED_ORIGINS для всех платформ
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.railway.app',
+    'https://*.vercel.app',
+    'https://*.pythonanywhere.com',
+]
+
 # 2. Доверенные источники для CSRF (самое важное для ошибки 403)
 CSRF_TRUSTED_ORIGINS = ['https://railway.app']
 
