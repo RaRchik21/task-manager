@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Все доски</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(180deg, #F9F7F1 0%, #ECE7DC 100%); color: #2C2C2A; min-height: 100vh; }
+    .page-wrap { max-width: 1180px; margin: 0 auto; padding: 32px 24px 40px; }
+    header { display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: start; margin-bottom: 24px; }
+    header h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.6px; line-height: 1.1; }
+    .page-subtitle { margin-top: 8px; font-size: 14px; color: #6E6A61; max-width: 640px; }
+    .header-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: flex-end; align-items: center; }
+    .btn { background: rgba(255,255,255,0.9); border: 1px solid rgba(211,209,199,0.9); border-radius: 14px; padding: 12px 18px; font-size: 14px; color: #444441; cursor: pointer; text-decoration:none; display:inline-flex; align-items:center; transition: all 0.2s ease; min-width: 110px; }
+    .btn:hover { background: white; transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .btn.create-board { background: linear-gradient(135deg,#4D45D5,#7A6BF7); color: #fff; border: none; box-shadow: 0 18px 45px rgba(72,60,170,0.12); }
+    .btn-primary { background: #4D45D5; color: #fff; border: none; }
+    .member-remove { border: none; background: #E24B4A; color: white; border-radius: 12px; width: 34px; height: 34px; font-size: 16px; cursor: pointer; }
+    .board-grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); gap:20px; }
+    .board-card { background: rgba(255,255,255,0.96); border: 1px solid rgba(211,209,199,0.5); border-radius: 20px; padding: 24px; display:flex; flex-direction:column; gap:14px; box-shadow: 0 18px 50px rgba(40,35,27,0.06); transition: transform 0.2s ease, box-shadow 0.2s ease; min-height: 220px; }
+    .board-card:hover { transform: translateY(-3px); box-shadow: 0 24px 60px rgba(40,35,27,0.12); }
+    .board-card h2 { font-size: 20px; margin-bottom: 4px; }
+    .board-actions .btn.open-board { width: 100%; justify-content: center; padding: 14px 16px; font-weight: 700; }
+    .checkbox-row { display:flex; align-items:center; gap:10px; font-size:14px; color:#444441; }
+    .checkbox-row input[type="checkbox"] { width:18px; height:18px; accent-color:#4D45D5; }
+    select[multiple] { min-height: 140px; }
+    .board-meta { font-size: 13px; color:#6E6A61; display:flex; flex-wrap:wrap; gap:10px; }
+    .board-meta span { display:inline-flex; align-items:center; gap:6px; }
+    .board-label { font-weight:700; color:#3B3A39; }
+    .board-description { color:#6E6A61; line-height:1.6; }
+    .board-actions { margin-top:auto; display:flex; gap:10px; flex-wrap:wrap; }
+    .board-actions .btn { background: rgba(68,68,68,0.08); color: #373330; }
+    .board-actions .btn.open-board { width:100%; justify-content:center; padding:14px 16px; font-weight:700; }
+    .board-card { min-height: 220px; }
+    .empty-state { text-align:center; padding:80px 20px; color:#908B82; font-size:16px; }
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.2); backdrop-filter:blur(4px); z-index:100; align-items:center; justify-content:center; }
+    .modal-overlay.active { display:flex; }
+    .modal { width:440px; max-width:95vw; background:rgba(255,255,255,0.98); border-radius:24px; padding:28px; border:1px solid rgba(211,209,199,0.7); }
+    .modal h2 { margin-bottom:18px; font-size:20px; }
+    .modal label { display:block; font-size:13px; color:#6E6A61; margin-bottom:8px; }
+    .modal input, .modal textarea, .modal select { width:100%; padding:12px 14px; border:1px solid rgba(211,209,199,0.9); border-radius:14px; background:#fff; font-size:14px; margin-bottom:14px; font-family: inherit; }
+    .modal select { min-height: 120px; padding: 10px 12px; }
+    .modal select[multiple] { padding: 8px 12px; }
+    .modal select option { padding: 8px; }
+    .modal-buttons { display:flex; justify-content:flex-end; gap:12px; }
+    .modal-cancel { background:none; border:1px solid rgba(211,209,199,0.9); padding:12px 18px; border-radius:14px; cursor:pointer; }
+
+    /* Стили для карточек пользователей (копия из index.html) */
+    .user-card { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(211,209,199,0.3); transition: background 0.15s; }
+    .user-card:hover { background: rgba(232,226,216,0.4); }
+    .user-avatar { width: 38px; height: 38px; border-radius: 50%; background: rgba(211,209,199,0.8); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: #5F5E5A; flex-shrink: 0; }
+    .user-info { flex: 1; }
+    .user-name { font-size: 14px; font-weight: 500; color: #2C2C2A; }
+    .user-meta { font-size: 12px; color: #888780; }
+    .role-select { font-size: 12px; padding: 4px 8px; border: 1px solid rgba(211,209,199,0.8); border-radius: 6px; background: white; color: #444441; cursor: pointer; }
+
+    /* Уведомления */
+    .custom-notification { position: fixed; bottom: 20px; right: 20px; padding: 12px 24px; border-radius: 10px; font-size: 14px; z-index: 10000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-weight: 500; animation: slideInError 0.3s ease; }
+    @keyframes slideInError {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOutError {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100%); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrap">
+    <header>
+      <div>
+        <h1 id="systemName">Все доски</h1>
+        <div class="page-subtitle">Здесь отображаются все доступные проекты. Создавайте новые доски и переходите на нужные проекты одним кликом.</div>
+      </div>
+      <div class="header-actions">
+        <a href="/orgchart.html" class="btn" style="text-decoration:none;">🏢 Структура</a>
+        <button class="btn" onclick="openGlobalUsers()">👥 Пользователи</button>
+        <div id="currentUserInfo" style="font-size:14px;color:#6E6A61;align-self:center;"></div>
+        <button class="btn create-board" onclick="openBoardModal()">+ Создать доску</button>
+      </div>
+    </header>
+
+    <div id="boardList" class="board-grid"></div>
+    <div id="boardEmpty" class="empty-state" style="display:none;">Пока нет досок. Создайте первую доску.</div>
+  </div>
+
+  <!-- Модалка создания/редактирования доски -->
+  <div class="modal-overlay" id="boardModal">
+    <div class="modal">
+      <h2 id="boardModalTitle">Создать новую доску</h2>
+      <label>Название</label>
+      <input type="text" id="boardName" placeholder="Название доски" />
+      <label>Описание</label>
+      <textarea id="boardDescription" placeholder="Описание доски"></textarea>
+      <label>Приватность</label>
+      <select id="boardPrivacy">
+        <option value="public">Публичная (видят все)</option>
+        <option value="private">Приватная (только участники)</option>
+      </select>
+      <div class="checkbox-row" style="margin-bottom:12px;">
+        <input type="checkbox" id="boardAllowAnyone" checked />
+        <label for="boardAllowAnyone">Может просматривать любой</label>
+      </div>
+      <label>Участники (редакторы)</label>
+      <select id="boardParticipants" multiple></select>
+      <label>Зрители</label>
+      <select id="boardViewers" multiple></select>
+      <div class="modal-buttons">
+        <button class="modal-cancel" onclick="closeBoardModal()">Отмена</button>
+        <button id="boardSaveButton" class="btn" onclick="saveBoard()">Создать</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модалка участников доски -->
+  <div class="modal-overlay" id="boardMembersModal">
+    <div class="modal" style="width:560px;">
+      <h2 id="boardMembersTitle">Участники доски</h2>
+      <p style="color:#6E6A61; margin-top:0; margin-bottom:16px; font-size:14px;">Здесь вы можете управлять участниками доски и настраивать их права доступа.</p>
+      <div id="boardMembersList" style="max-height:60vh;overflow-y:auto;"></div>
+      <div style="margin-top:16px; border-top:1px solid rgba(211,209,199,0.3); padding-top:12px;">
+    <select id="addMemberSelect" class="add-member-select" style="width:100%; padding:8px; border-radius:14px;" disabled>
+      <option value="">-- Добавить участника --</option>
+    </select>
+    <button id="addMemberButton" class="btn" style="margin-top:8px; width:100%;" onclick="addMemberToBoard()" disabled>Добавить</button>
+  </div>
+      <div class="modal-buttons">
+        <button class="modal-cancel" onclick="closeMembersModal()">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = '/api';
+    let token = localStorage.getItem('token');
+    let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    let allUsers = [];
+    let editingBoardId = null;
+    let allBoards = []; // глобальная переменная для хранения списка досок
+
+    async function init() {
+      if (token && !currentUser) {
+        await restoreCurrentUserFromToken();
+      }
+      if (!token || !currentUser) {
+        renderLogin();
+        return;
+      }
+      await loadUsers();
+      await loadBoardSettings();
+      await loadBoards();
+      renderUserInfo();
+    }
+
+    function authHeaders() {
+      return { 'Content-Type':'application/json', 'Accept':'application/json', 'Authorization':`Bearer ${token}` };
+    }
+
+    function decodeJwt(token) {
+      try {
+        const payload = token.split('.')[1];
+        const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+        return JSON.parse(decodeURIComponent(decoded.split('').map(c => `%${('00' + c.charCodeAt(0).toString(16)).slice(-2)}`).join('')));
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function restoreCurrentUserFromToken() {
+      const payload = decodeJwt(token);
+      if (!payload) return;
+      const username = payload.username || payload.user_name || payload.email;
+      const userId = payload.user_id || payload.id;
+      if (!username && !userId) return;
+      const res = await fetch(`${API}/users/`, { headers: authHeaders() });
+      if (!res.ok) return;
+      const data = await res.json();
+      const list = data.results || data;
+      currentUser = list.find(u => u.username === username || u.id === userId) || list[0];
+      if (currentUser) {
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+      }
+    }
+
+    function renderLogin() {
+      document.body.innerHTML = `
+      <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;">
+        <div style="width:360px;background:white;border-radius:24px;padding:32px;box-shadow:0 20px 50px rgba(0,0,0,0.08);">
+          <h1 style="font-size:24px;margin-bottom:8px;">Войти</h1>
+          <p style="color:#666;margin-bottom:18px;">Введите логин и пароль для доступа к доскам</p>
+          <input id="loginUsername" placeholder="Логин" style="width:100%;padding:12px 14px;border:1px solid #ccc;border-radius:14px;margin-bottom:12px;" />
+          <input id="loginPassword" type="password" placeholder="Пароль" style="width:100%;padding:12px 14px;border:1px solid #ccc;border-radius:14px;margin-bottom:18px;" />
+          <button onclick="login()" style="width:100%;padding:12px 14px;border:none;border-radius:14px;background:#444;color:#fff;font-size:15px;cursor:pointer;">Войти</button>
+          <div id="loginError" style="color:#993C1D;margin-top:12px;display:none;">Неверный логин или пароль</div>
+        </div>
+      </div>`;
+    }
+
+    async function login() {
+      const username = document.getElementById('loginUsername').value.trim();
+      const password = document.getElementById('loginPassword').value.trim();
+      if (!username || !password) return;
+      const res = await fetch(`${API}/token/`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ username, password }) });
+      if (!res.ok) {
+        document.getElementById('loginError').style.display = 'block';
+        return;
+      }
+      const data = await res.json();
+      token = data.access;
+      localStorage.setItem('token', token);
+      await loadCurrentUser(username);
+      location.reload();
+    }
+
+    async function loadCurrentUser(username) {
+      const res = await fetch(`${API}/users/`, { headers: authHeaders() });
+      const data = await res.json();
+      const list = data.results || data;
+      currentUser = list.find(u => u.username === username) || list[0];
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    }
+
+    async function loadUsers() {
+      const res = await fetch(`${API}/users/`, { headers: authHeaders() });
+      if (!res.ok) return;
+      const data = await res.json();
+      allUsers = data.results || data;
+      renderBoardUserOptions();
+    }
+
+    function renderBoardUserOptions() {
+      const participantSelect = document.getElementById('boardParticipants');
+      const viewerSelect = document.getElementById('boardViewers');
+      if (!participantSelect || !viewerSelect) return;
+      const options = allUsers.map(u => `<option value="${u.id}">${escHtml(u.full_name || u.username)} (${escHtml(u.username)})</option>`).join('');
+      participantSelect.innerHTML = options;
+      viewerSelect.innerHTML = options;
+    }
+
+    function renderUserInfo() {
+      const infoEl = document.getElementById('currentUserInfo');
+      if (infoEl) {
+        infoEl.textContent = `Пользователь: ${currentUser.full_name || currentUser.username} (${currentUser.role})`;
+      }
+    }
+
+    function escHtml(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    async function loadBoardSettings() {
+      try {
+        const res = await fetch(`${API}/board-settings/current/`, { headers: authHeaders() });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.system_name) {
+          document.getElementById('systemName').textContent = data.system_name;
+          document.title = data.system_name;
+        }
+      } catch(e) {
+        console.error(e);
+      }
+    }
+
+    async function loadBoards() {
+      const res = await fetch(`${API}/boards/`, { headers: authHeaders() });
+      if (!res.ok) return;
+      const data = await res.json();
+      const boards = data.results || data;
+      allBoards = boards;
+      const list = document.getElementById('boardList');
+      const empty = document.getElementById('boardEmpty');
+      list.innerHTML = boards.map(board => `
+        <div class="board-card" onclick="showBoardMembers(${board.id})" style="cursor:pointer;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+            <div>
+              <h2>${board.name}</h2>
+              <div class="board-meta"><span class="board-label">${board.privacy === 'public' ? 'Публичная' : 'Приватная'}</span></div>
+            </div>
+            <div style="font-size:12px;color:${board.allow_anyone_view ? '#4CAF50' : '#E24B4A'};white-space:nowrap;">${board.allow_anyone_view ? 'Открыт доступ' : 'Только участники'}</div>
+          </div>
+          <div class="board-meta">Создатель: ${board.creator_name || ''}</div>
+          ${board.description ? `<div class="board-meta">${board.description}</div>` : ''}
+          <div class="board-meta">Участников: ${board.memberships?.length || 0}</div>
+          <div class="board-actions">
+            <a class="btn open-board" href="/main/?board=${board.id}" onclick="event.stopPropagation();">Перейти</a>
+            ${Number(board.creator) === Number(currentUser?.id) ? `
+              <button class="btn" onclick="event.stopPropagation(); openEditBoard(${board.id})">Редактировать</button>
+              <button class="btn" onclick="event.stopPropagation(); deleteBoard(${board.id})">Удалить</button>
+            ` : ''}
+          </div>
+        </div>
+      `).join('');
+      empty.style.display = boards.length ? 'none' : 'block';
+    }
+
+    function clearBoardForm() {
+      document.getElementById('boardName').value = '';
+      document.getElementById('boardDescription').value = '';
+      document.getElementById('boardPrivacy').value = 'public';
+      document.getElementById('boardAllowAnyone').checked = true;
+      const participantSelect = document.getElementById('boardParticipants');
+      const viewerSelect = document.getElementById('boardViewers');
+      if (participantSelect) Array.from(participantSelect.options).forEach(option => option.selected = false);
+      if (viewerSelect) Array.from(viewerSelect.options).forEach(option => option.selected = false);
+    }
+
+    function openBoardModal() {
+      editingBoardId = null;
+      document.getElementById('boardModalTitle').textContent = 'Создать новую доску';
+      document.getElementById('boardSaveButton').textContent = 'Создать';
+      renderBoardUserOptions();
+      clearBoardForm();
+      document.getElementById('boardModal').classList.add('active');
+    }
+
+    function openEditBoard(boardId) {
+      const board = allBoards.find(b => Number(b.id) === Number(boardId));
+      if (!board) return;
+      editingBoardId = boardId;
+      document.getElementById('boardModalTitle').textContent = 'Редактировать настройки доски';
+      document.getElementById('boardSaveButton').textContent = 'Сохранить';
+      renderBoardUserOptions();
+      document.getElementById('boardName').value = board.name;
+      document.getElementById('boardDescription').value = board.description || '';
+      document.getElementById('boardPrivacy').value = board.privacy;
+      document.getElementById('boardAllowAnyone').checked = board.allow_anyone_view;
+      const participantSelect = document.getElementById('boardParticipants');
+      const viewerSelect = document.getElementById('boardViewers');
+      const participantIds = board.memberships?.filter(m => m.role === 'editor').map(m => m.user?.id || m.user) || [];
+      const viewerIds = board.memberships?.filter(m => m.role === 'viewer').map(m => m.user?.id || m.user) || [];
+      if (participantSelect) {
+        Array.from(participantSelect.options).forEach(option => option.selected = participantIds.includes(parseInt(option.value)));
+      }
+      if (viewerSelect) {
+        Array.from(viewerSelect.options).forEach(option => option.selected = viewerIds.includes(parseInt(option.value)));
+      }
+      document.getElementById('boardModal').classList.add('active');
+    }
+
+    function closeBoardModal() {
+      document.getElementById('boardModal').classList.remove('active');
+    }
+
+    async function saveBoard() {
+      const name = document.getElementById('boardName').value.trim();
+      if (!name) {
+        showNotification('Введите название доски', 'error');
+        return;
+      }
+      const description = document.getElementById('boardDescription').value.trim();
+      const privacy = document.getElementById('boardPrivacy').value;
+      const allowAnyone = document.getElementById('boardAllowAnyone').checked;
+      const participantIds = Array.from(document.getElementById('boardParticipants').selectedOptions).map(o => parseInt(o.value));
+      const viewerIds = Array.from(document.getElementById('boardViewers').selectedOptions).map(o => parseInt(o.value));
+      const payload = {
+        name, description, privacy,
+        allow_anyone_view: allowAnyone,
+        participant_ids: participantIds,
+        viewer_ids: viewerIds
+      };
+      const method = editingBoardId ? 'PATCH' : 'POST';
+      const url = editingBoardId ? `${API}/boards/${editingBoardId}/` : `${API}/boards/`;
+      const res = await fetch(url, {
+        method,
+        headers: authHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const error = await res.text();
+        showNotification('Не удалось сохранить настройки доски: ' + error, 'error');
+        return;
+      }
+      closeBoardModal();
+      await loadBoards();
+      editingBoardId = null;
+    }
+
+    // Уведомления
+    function showNotification(message, type = 'error') {
+      const old = document.querySelector('.custom-notification');
+      if (old) old.remove();
+      const notification = document.createElement('div');
+      notification.className = 'custom-notification';
+      notification.textContent = message;
+      notification.style.background = type === 'error' ? '#E24B4A' : '#4CAF50';
+      notification.style.color = 'white';
+      document.body.appendChild(notification);
+      setTimeout(() => {
+        notification.style.animation = 'slideOutError 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
+    }
+
+    // Открыть модалку с глобальным списком пользователей
+    let globalUsersList = [];
+
+    async function openGlobalUsers() {
+      const res = await fetch(`${API}/users/`, { headers: authHeaders() });
+      const data = await res.json();
+      globalUsersList = data.results || data;
+      const roles = { lead:'Ведущий специалист', specialist:'Специалист', senior:'Старший специалист', junior:'Младший специалист', chief:'Главный специалист', admin:'Администратор' };
+      const html = globalUsersList.map(u => `
+        <div class="user-card">
+          <div class="user-avatar">${((u.first_name||'')[0]||(u.username||'')[0]||'?').toUpperCase()}${((u.last_name||'')[0]||'').toUpperCase()}</div>
+          <div class="user-info">
+            <div class="user-name">${u.full_name||u.username}</div>
+            <div class="user-meta">${roles[u.role]||u.role}</div>
+          </div>
+        </div>
+      `).join('');
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay active';
+      modal.innerHTML = `<div class="modal" style="width:480px;"><h2>Пользователи системы</h2><div style="max-height:60vh;overflow-y:auto;">${html}</div><div class="modal-buttons"><button class="modal-cancel" onclick="this.closest('.modal-overlay').remove()">Закрыть</button></div></div>`;
+      document.body.appendChild(modal);
+      modal.addEventListener('click', (e) => { if(e.target === modal) modal.remove(); });
+    }
+
+    // Показать участников конкретной доски
+    let currentBoardForMembers = null;
+
+async function showBoardMembers(boardId) {
+  const board = allBoards.find(b => Number(b.id) === Number(boardId));
+  if (!board) {
+    console.error('Board not found for members modal', boardId, allBoards);
+    return;
+  }
+  currentBoardForMembers = board;
+  document.getElementById('boardMembersTitle').innerHTML = `Участники доски: ${board.name}`;
+  const members = board.memberships || [];
+  const rolesMap = { admin: 'Админ', editor: 'Редактор', viewer: 'Зритель' };
+  const canManage = Number(board.creator) === Number(currentUser?.id) || currentUser?.role === 'admin';
+
+  const addMemberSelect = document.getElementById('addMemberSelect');
+  const addMemberButton = document.getElementById('addMemberButton');
+  let availableUsers = [];
+  if (addMemberSelect) {
+    const existingMemberIds = members.map(m => m.user?.id || m.user).filter(Boolean);
+    availableUsers = allUsers.filter(u => u.id !== currentUser.id && !existingMemberIds.includes(u.id));
+    addMemberSelect.innerHTML = [`
+      <option value="">-- Добавить участника --</option>
+      ${availableUsers.length ? availableUsers.map(u => `<option value="${u.id}">${escHtml(u.full_name || u.username)} (${escHtml(u.username)})</option>`).join('') : '<option value="">Нет доступных пользователей</option>'}
+    `].join('');
+    addMemberSelect.disabled = !canManage || !availableUsers.length;
+  }
+  if (addMemberButton) {
+    addMemberButton.disabled = !canManage || !availableUsers.length;
+  }
+
+  const list = document.getElementById('boardMembersList');
+  const existingNotice = document.getElementById('boardMembersNotice');
+  if (existingNotice) existingNotice.remove();
+  if (!members.length) {
+    list.innerHTML = '<div style="padding:24px;text-align:center;">Нет участников</div>';
+  } else {
+    list.innerHTML = members.map(m => `
+      <div class="user-card">
+        <div class="user-avatar">${((m.user?.first_name||'')[0]||(m.user?.username||'')[0]||'?').toUpperCase()}${((m.user?.last_name||'')[0]||'').toUpperCase()}</div>
+        <div class="user-info">
+          <div class="user-name">${m.user?.full_name || m.user?.username}</div>
+          <div class="user-meta">Роль: ${rolesMap[m.role]}</div>
+          ${canManage ? `
+            <div class="user-permissions">
+              <strong style="display:block;margin-bottom:6px;">Настройки доступа:</strong>
+              <label><input type="checkbox" ${m.view_all_tasks ? 'checked' : ''} onchange="changeBoardMemberPermission(${board.id}, ${m.user.id}, 'view_all_tasks', this.checked)"> Просматривать все задачи</label>
+              <label><input type="checkbox" ${m.edit_columns ? 'checked' : ''} onchange="changeBoardMemberPermission(${board.id}, ${m.user.id}, 'edit_columns', this.checked)"> Редактировать колонки</label>
+              <label><input type="checkbox" ${m.reorder_columns ? 'checked' : ''} onchange="changeBoardMemberPermission(${board.id}, ${m.user.id}, 'reorder_columns', this.checked)"> Менять порядок колонок</label>
+            </div>
+          ` : ''}
+        </div>
+        ${canManage ? `<button class="member-remove" onclick="removeMemberFromBoard(${board.id}, ${m.user.id})">✕</button>` : ''}
+      </div>
+    `).join('');
+  }
+
+  if (!canManage) {
+    const note = document.createElement('div');
+    note.id = 'boardMembersNotice';
+    note.style.margin = '12px 0 0';
+    note.style.padding = '12px';
+    note.style.background = 'rgba(245,244,242,0.9)';
+    note.style.borderRadius = '14px';
+    note.style.color = '#6E6A61';
+    note.textContent = 'У вас нет прав изменять участников и их доступы. Обратитесь к создателю доски.';
+    list.parentNode.insertBefore(note, list.nextSibling);
+  }
+  document.getElementById('boardMembersModal').classList.add('active');
+}
+
+    function closeMembersModal() {
+      document.getElementById('boardMembersModal').classList.remove('active');
+      currentBoardForMembers = null;
+    }
+
+    async function changeBoardMemberPermission(boardId, userId, permission, value) {
+      try {
+        const payload = { user_id: userId };
+        payload[permission] = value;
+        const res = await fetch(`${API}/boards/${boardId}/update_membership/`, {
+          method: 'PATCH',
+          headers: authHeaders(),
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          await loadBoards(); // перезагрузить доски, чтобы обновить список участников
+          if (currentBoardForMembers && currentBoardForMembers.id === boardId) {
+            await showBoardMembers(boardId);
+          }
+          showNotification('Права обновлены', 'success');
+        } else {
+          const err = await res.json();
+          showNotification(err.error || 'Ошибка обновления прав', 'error');
+        }
+      } catch (e) {
+        showNotification('Ошибка сети', 'error');
+      }
+    }
+
+
+
+    
+async function addMemberToBoard() {
+  const select = document.getElementById('addMemberSelect');
+  const userId = select.value;
+  if (!userId || !currentBoardForMembers) return;
+  try {
+    const res = await fetch(`${API}/boards/${currentBoardForMembers.id}/add_member/`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ user_id: parseInt(userId), role: 'viewer' })
+    });
+    if (res.ok) {
+      showNotification('Участник добавлен', 'success');
+      await showBoardMembers(currentBoardForMembers.id);
+    } else {
+      const err = await res.json();
+      showNotification(err.error || 'Ошибка добавления', 'error');
+    }
+  } catch(e) {
+    showNotification('Ошибка сети', 'error');
+  }
+}
+
+async function removeMemberFromBoard(boardId, userId) {
+  if (!confirm('Удалить участника из доски?')) return;
+  try {
+    const res = await fetch(`${API}/boards/${boardId}/remove_member/`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ user_id: userId })
+    });
+    if (res.ok) {
+      showNotification('Участник удалён', 'success');
+      await showBoardMembers(boardId);
+    } else {
+      const err = await res.json();
+      showNotification(err.error || 'Ошибка удаления', 'error');
+    }
+  } catch(e) {
+    showNotification('Ошибка сети', 'error');
+  }
+}
+
+async function deleteBoard(boardId) {
+  if (!confirm('Удалить доску? Это действие необратимо.')) return;
+  try {
+    const res = await fetch(`${API}/boards/${boardId}/`, {
+      method: 'DELETE',
+      headers: authHeaders()
+    });
+    if (res.ok) {
+      showNotification('Доска удалена', 'success');
+      await loadBoards();
+      closeMembersModal();
+    } else {
+      const err = await res.json();
+      showNotification(err.error || 'Ошибка удаления доски', 'error');
+    }
+  } catch(e) {
+    showNotification('Ошибка сети', 'error');
+  }
+}
+
+    init();
+  </script>
+</body>
+</html>

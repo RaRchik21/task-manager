@@ -3,109 +3,72 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Task Manager</title>
+  <title>Task Tracker</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background-color: #F5F0E8;
-      color: #2C2C2A;
-      min-height: 100vh;
-    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background-color: #F5F0E8; color: #2C2C2A; min-height: 100vh; }
 
     /* ── ШАПКА ── */
-    header {
-      background: rgba(237,232,223,0.85);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(211,209,199,0.6);
-      padding: 0 24px;
-      height: 56px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 50;
-    }
+    header { background: rgba(237,232,223,0.85); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(211,209,199,0.6); padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
     header h1 { font-size: 16px; font-weight: 700; color: #2C2C2A; letter-spacing: -0.3px; cursor: default; }
-    .header-center {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex: 1;
-      max-width: 320px;
-      margin: 0 24px;
-    }
-    .search-input {
-      width: 100%;
-      padding: 6px 12px 6px 32px;
-      border: 1px solid rgba(211,209,199,0.8);
-      border-radius: 20px;
-      font-size: 13px;
-      background: rgba(255,255,255,0.6);
-      outline: none;
-      transition: all 0.2s;
-    }
+    .header-center { display: flex; align-items: center; gap: 8px; flex: 1; max-width: 320px; margin: 0 24px; }
+    .search-input { width: 100%; padding: 6px 12px 6px 32px; border: 1px solid rgba(211,209,199,0.8); border-radius: 20px; font-size: 13px; background: rgba(255,255,255,0.6); outline: none; transition: all 0.2s; }
     .search-input:focus { background: white; border-color: #888780; }
     .search-wrap { position: relative; flex: 1; }
     .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #888780; }
     .header-right { display: flex; align-items: center; gap: 8px; }
     .user-badge { background: rgba(211,209,199,0.7); border-radius: 20px; padding: 4px 12px; font-size: 13px; color: #444441; }
-    .header-btn {
-      background: rgba(255,255,255,0.5); border: 1px solid rgba(211,209,199,0.8);
-      border-radius: 8px; padding: 4px 12px; font-size: 13px; color: #5F5E5A;
-      cursor: pointer; transition: all 0.15s;
-    }
+    .header-btn { background: rgba(255,255,255,0.5); border: 1px solid rgba(211,209,199,0.8); border-radius: 8px; padding: 4px 12px; font-size: 13px; color: #5F5E5A; cursor: pointer; transition: all 0.15s; text-decoration: none; display: inline-flex; align-items: center; }
     .header-btn:hover { background: rgba(232,226,216,0.8); }
+    .board-select { padding: 6px 10px; border: 1px solid rgba(211,209,199,0.8); border-radius: 20px; background: rgba(255,255,255,0.7); color: #5F5E5A; font-size: 13px; outline: none; }
+    .board-chat-panel { display: none; position: fixed; right: 24px; top: 96px; width: 360px; height: auto; max-height: calc(100vh - 128px); background: rgba(255,255,255,0.98); border: 1px solid rgba(211,209,199,0.6); border-radius: 22px; padding: 18px; box-shadow: 0 20px 60px rgba(0,0,0,0.12); z-index: 1000; flex-direction: column; gap: 12px; min-width: 320px; min-height: 300px; }
+    .board-chat-panel.open { display: flex; }
+    .board-chat-panel h2 { font-size: 15px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: move; }
+    .board-chat-panel h2 button { background: none; border: none; cursor: pointer; color: #5F5E5A; font-size: 16px; }
+    .board-chat-panel .board-chat-header { width: 100%; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .board-chat-panel .board-chat-header .chat-title { font-weight:700; }
+    .board-chat-list { max-height: calc(100vh - 300px); overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+    .board-chat-message { padding: 12px 14px; background: rgba(237,232,223,0.9); border-radius: 16px; position: relative; }
+    .board-chat-message .board-chat-actions { margin-top: 10px; display:flex; justify-content:flex-end; }
+    .chat-reply-btn { background:none; border:none; color:#4D45D5; font-size:12px; cursor:pointer; padding:4px 6px; border-radius:10px; }
+    .board-chat-author { font-size: 12px; font-weight: 600; color: #444441; margin-bottom: 4px; }
+    .board-chat-text { font-size: 13px; color: #2C2C2A; line-height: 1.4; white-space: pre-wrap; }
+    .board-chat-reply { padding: 10px 12px; background: rgba(76,114,234,0.08); border-left: 3px solid #4D45D5; border-radius: 12px; margin-bottom: 6px; display:none; flex-direction: column; gap: 8px; }
+    .board-chat-reply.active { display:flex; }
+    .board-chat-reply span { font-size: 12px; color: #444441; }
+    .board-chat-reply .reply-preview { font-size: 12px; color: #5F5E5A; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+    .board-chat-input { display: flex; gap: 8px; align-items: center; }
+    .board-chat-input textarea { flex: 1; resize: none; min-height: 60px; border: 1px solid rgba(211,209,199,0.9); border-radius: 14px; padding: 10px 12px; font-size: 14px; }
+    .board-chat-resize-handle { position: absolute; width: 18px; height: 18px; right: 10px; bottom: 10px; cursor: nwse-resize; border-radius: 50%; background: rgba(95,94,90,0.12); }
+
+    /* ── КОЛОНКА ── */
+    .notif-btn { position: relative; background: rgba(255,255,255,0.5); border: 1px solid rgba(211,209,199,0.8); border-radius: 8px; padding: 4px 12px; font-size: 15px; color: #5F5E5A; cursor: pointer; transition: all 0.15s; }
+    .notif-btn:hover { background: rgba(232,226,216,0.8); }
+    .notif-badge { position: absolute; top: -6px; right: -6px; background: #E24B4A; color: white; border-radius: 10px; padding: 1px 5px; font-size: 10px; font-weight: 700; display: none; }
+    .notif-badge.visible { display: block; }
 
     /* ── СТАТИСТИКА ── */
-    .stats-bar {
-      display: flex; gap: 16px; padding: 8px 24px;
-      background: rgba(237,232,223,0.5);
-      border-bottom: 1px solid rgba(211,209,199,0.3);
-      font-size: 12px; color: #888780; align-items: center;
-    }
+    .stats-bar { display: flex; gap: 16px; padding: 8px 24px; background: rgba(237,232,223,0.5); border-bottom: 1px solid rgba(211,209,199,0.3); font-size: 12px; color: #888780; align-items: center; }
     .stats-bar strong { color: #444441; }
 
     /* ── ФИЛЬТРЫ ── */
-    .filter-bar {
-      display: none; gap: 8px; padding: 8px 24px;
-      background: rgba(237,232,223,0.3);
-      border-bottom: 1px solid rgba(211,209,199,0.2);
-      align-items: center; flex-wrap: wrap;
-    }
+    .filter-bar { display: none; gap: 8px; padding: 8px 24px; background: rgba(237,232,223,0.3); border-bottom: 1px solid rgba(211,209,199,0.2); align-items: center; flex-wrap: wrap; }
     .filter-bar.visible { display: flex; }
-    .filter-btn {
-      background: rgba(255,255,255,0.6); border: 1px solid rgba(211,209,199,0.8);
-      border-radius: 20px; padding: 4px 14px; font-size: 12px; color: #5F5E5A;
-      cursor: pointer; transition: all 0.15s;
-    }
+    .filter-btn { background: rgba(255,255,255,0.6); border: 1px solid rgba(211,209,199,0.8); border-radius: 20px; padding: 4px 14px; font-size: 12px; color: #5F5E5A; cursor: pointer; transition: all 0.15s; }
     .filter-btn:hover, .filter-btn.active { background: #444441; color: white; border-color: #444441; }
     .filter-label { font-size: 12px; color: #888780; }
-    .filter-user-select {
-      font-size: 12px; padding: 4px 10px; border: 1px solid rgba(211,209,199,0.8);
-      border-radius: 20px; background: rgba(255,255,255,0.6); color: #5F5E5A; outline: none;
-    }
+    .filter-user-select { font-size: 12px; padding: 4px 10px; border: 1px solid rgba(211,209,199,0.8); border-radius: 20px; background: rgba(255,255,255,0.6); color: #5F5E5A; outline: none; }
 
     /* ── ДОСКА ── */
     .board-wrapper { padding: 24px; overflow-x: auto; }
     .board { display: flex; gap: 16px; align-items: flex-start; min-height: calc(100vh - 120px); }
 
     /* ── КОЛОНКА ── */
-    .column {
-      background: rgba(232,226,216,0.7); backdrop-filter: blur(8px);
-      border-radius: 14px; padding: 12px; width: 280px; min-width: 280px;
-      border: 1px solid rgba(211,209,199,0.5);
-      transition: box-shadow 0.15s ease;
-      user-select: none;
-    }
+    .column { background: rgba(232,226,216,0.7); backdrop-filter: blur(8px); border-radius: 14px; padding: 12px; width: 280px; min-width: 280px; border: 1px solid rgba(211,209,199,0.5); transition: box-shadow 0.15s ease; user-select: none; }
     .column:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.07); }
-    .column.collapsed { width: 56px; min-width: 56px; padding: 12px 8px; overflow: hidden; }
     .column.drag-over { border: 2px dashed #888780; }
     .column.col-dragging { opacity: 0.5; }
     .column .tasks { min-height: 60px; }
-
     .column-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 0 2px; gap: 6px; }
     .column-title { font-size: 14px; font-weight: 600; color: #444441; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .column-count { background: rgba(211,209,199,0.8); border-radius: 10px; padding: 2px 8px; font-size: 11px; color: #5F5E5A; white-space: nowrap; }
@@ -113,46 +76,19 @@
     .col-btn { background: none; border: none; cursor: pointer; font-size: 13px; color: #888780; padding: 2px 4px; border-radius: 4px; transition: all 0.15s; }
     .col-btn:hover { background: rgba(0,0,0,0.06); color: #444441; }
 
-    .column.collapsed .column-title { writing-mode: vertical-rl; transform: rotate(180deg); margin: 8px auto; display: block; white-space: nowrap; }
-    .column.collapsed .tasks, .column.collapsed .btn-add-task,
-    .column.collapsed .column-count, .column.collapsed .column-actions { display: none; }
-    .column.collapsed .column-header { flex-direction: column; margin-bottom: 0; }
-
     /* ── КАРТОЧКА ── */
-    .task-card {
-        background: rgba(255,255,255,0.85);
-        backdrop-filter: blur(4px);
-        border-radius: 10px;
-        padding: 10px 12px;
-        margin-bottom: 8px;
-        border: 1px solid rgba(232,226,216,0.8);
-        cursor: grab;
-        position: relative;
-        transition: box-shadow 0.15s ease;
-        user-select: none;
-        overflow: hidden;
-    }
-
-    .priority-bar {
-        position: absolute;
-        left: 0;
-        top: 2px;
-        bottom: 2px;
-        width: 3px;
-        border-radius: 2px;
-    }
+    .task-card { background: rgba(255,255,255,0.85); backdrop-filter: blur(4px); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; border: 1px solid rgba(232,226,216,0.8); cursor: grab; position: relative; transition: box-shadow 0.15s ease; user-select: none; overflow: hidden; }
+    .priority-bar { position: absolute; left: 0; top: 2px; bottom: 2px; width: 3px; border-radius: 2px; }
     .task-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.09); }
     .task-card:active { cursor: grabbing; }
     .task-card.dragging { opacity: 0.4; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
     .task-card.other-user { border-left: 3px solid #9B8FD4; }
-    .task-card.chief-goal { border-left: 4px solid #E24B4A; border-top: 1px solid rgba(232,226,216,0.8); border-right: 1px solid rgba(232,226,216,0.8); border-bottom: 1px solid rgba(232,226,216,0.8); background: linear-gradient(90deg, rgba(226,75,74,0.04) 0%, rgba(255,255,255,0.85) 100%); }
-
+    .task-card.chief-goal { border-left: 4px solid #E24B4A; background: linear-gradient(90deg, rgba(226,75,74,0.04) 0%, rgba(255,255,255,0.85) 100%); }
     .priority-high { background: #E24B4A; }
     .priority-medium { background: #EF9F27; }
     .priority-low { background: #639922; }
-
     .task-title { font-size: 14px; color: #2C2C2A; margin-bottom: 4px; padding-left: 8px; }
-    .task-comment { font-size: 12px; color: #888780; margin-bottom: 4px; padding-left: 8px; font-style: italic; }
+    .task-comment-preview { font-size: 12px; color: #888780; margin-bottom: 4px; padding-left: 8px; font-style: italic; }
     .task-meta { font-size: 11px; color: #888780; display: flex; gap: 8px; flex-wrap: wrap; padding-left: 8px; align-items: center; }
     .task-deadline { padding: 1px 6px; border-radius: 4px; font-size: 11px; }
     .deadline-ok { background: #EAF3DE; color: #3B6D11; }
@@ -161,12 +97,15 @@
     .deadline-completed { background: #4CAF50; color: white; padding: 2px 8px; border-radius: 4px; }
     .chief-goal-badge { background: linear-gradient(135deg, #E24B4A, #FF6B6B); color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
     .other-user-badge { background: #EEEAF8; color: #6B5BBF; padding: 1px 6px; border-radius: 4px; font-size: 11px; }
-
-    .task-footer { display: flex; justify-content: flex-end; gap: 4px; margin-top: 6px; }
+    .task-footer { display: flex; justify-content: space-between; align-items: center; gap: 4px; margin-top: 6px; padding-left: 8px; }
     .task-action-btn { background: none; border: none; cursor: pointer; font-size: 11px; color: #B4B2A9; padding: 2px 4px; border-radius: 4px; transition: all 0.15s; }
     .task-action-btn:hover { background: rgba(0,0,0,0.05); color: #5F5E5A; }
-
     .drag-placeholder { height: 44px; border-radius: 10px; background: rgba(211,209,199,0.4); margin-bottom: 8px; border: 2px dashed rgba(180,178,169,0.6); pointer-events: none; }
+
+    /* ── АВАТАРКИ ИСПОЛНИТЕЛЕЙ НА КАРТОЧКЕ ── */
+    .assignee-avatars { display: flex; margin-left: 0; }
+    .assignee-avatar-small { width: 20px; height: 20px; border-radius: 50%; background: rgba(155,143,212,0.3); border: 2px solid white; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 600; color: #6B5BBF; margin-left: -5px; flex-shrink: 0; }
+    .assignee-avatar-small:first-child { margin-left: 0; }
 
     /* ── КНОПКИ ── */
     .btn-add-task { width: 100%; background: none; border: 1px dashed rgba(180,178,169,0.7); border-radius: 8px; padding: 8px; font-size: 13px; color: #888780; cursor: pointer; margin-top: 4px; transition: all 0.15s; }
@@ -177,14 +116,10 @@
     /* ── МОДАЛКИ ── */
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.25); backdrop-filter: blur(4px); z-index: 100; align-items: center; justify-content: center; }
     .modal-overlay.active { display: flex; }
-    .modal { background: rgba(245,240,232,0.97); backdrop-filter: blur(20px); border-radius: 18px; padding: 24px; width: 420px; border: 1px solid rgba(211,209,199,0.6); box-shadow: 0 20px 60px rgba(0,0,0,0.12); }
+    .modal { background: rgba(245,240,232,0.97); backdrop-filter: blur(20px); border-radius: 18px; padding: 24px; width: 420px; border: 1px solid rgba(211,209,199,0.6); box-shadow: 0 20px 60px rgba(0,0,0,0.12); max-height: 90vh; overflow-y: auto; }
     .modal h2 { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #2C2C2A; }
     .modal label { font-size: 12px; color: #888780; display: block; margin-bottom: 4px; }
-    .modal input, .modal select, .modal textarea {
-      width: 100%; padding: 8px 12px; border: 1px solid rgba(211,209,199,0.8);
-      border-radius: 10px; font-size: 14px; background: rgba(255,255,255,0.7);
-      margin-bottom: 10px; outline: none; font-family: inherit; transition: all 0.15s;
-    }
+    .modal input, .modal select, .modal textarea { width: 100%; padding: 8px 12px; border: 1px solid rgba(211,209,199,0.8); border-radius: 10px; font-size: 14px; background: rgba(255,255,255,0.7); margin-bottom: 10px; outline: none; font-family: inherit; transition: all 0.15s; }
     .modal input:focus, .modal select:focus, .modal textarea:focus { background: white; border-color: #888780; }
     .modal textarea { resize: vertical; min-height: 60px; }
     .modal-buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
@@ -192,8 +127,38 @@
     .btn-primary:hover { background: #2C2C2A; }
     .btn-cancel { background: none; border: 1px solid rgba(211,209,199,0.8); border-radius: 10px; padding: 8px 16px; font-size: 14px; cursor: pointer; color: #5F5E5A; transition: all 0.15s; }
     .btn-cancel:hover { background: rgba(232,226,216,0.8); }
-    .btn-danger { background: #FCEBEB; color: #A32D2D; border: none; border-radius: 10px; padding: 8px 16px; font-size: 14px; cursor: pointer; }
-    .btn-danger:hover { background: #F7C1C1; }
+
+    /* ── ВКЛАДКИ ЗАДАЧИ ── */
+    .task-modal-wide { width: 600px !important; }
+    .task-tabs { display: flex; gap: 0; margin-bottom: 16px; border-bottom: 1px solid rgba(211,209,199,0.5); }
+    .task-tab { padding: 8px 16px; font-size: 13px; color: #888780; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; background: none; border-top: none; border-left: none; border-right: none; }
+    .task-tab.active { color: #2C2C2A; border-bottom-color: #444441; font-weight: 500; }
+    .task-tab-content { display: none; }
+    .task-tab-content.active { display: block; }
+
+    /* ── ИСПОЛНИТЕЛИ ── */
+    .assignees-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px; }
+    .assignee-chip { display: flex; align-items: center; gap: 6px; background: rgba(211,209,199,0.5); border-radius: 20px; padding: 4px 10px; font-size: 12px; color: #444441; }
+    .assignee-chip button { background: none; border: none; cursor: pointer; color: #888780; font-size: 14px; line-height: 1; padding: 0; }
+    .assignee-chip button:hover { color: #E24B4A; }
+
+    /* ── КОММЕНТАРИИ ── */
+    .comment-item { padding: 10px 0; border-bottom: 1px solid rgba(211,209,199,0.3); }
+    .comment-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .comment-author { font-size: 12px; font-weight: 600; color: #444441; }
+    .comment-date { font-size: 11px; color: #B4B2A9; }
+    .comment-text { font-size: 13px; color: #2C2C2A; line-height: 1.5; }
+    .comment-mention { color: #534AB7; font-weight: 500; }
+    .comment-reply-notice { background: rgba(232,226,216,0.6); border-left: 3px solid #534AB7; padding: 6px 10px; margin-bottom: 8px; font-size: 12px; color: #5F5E5A; border-radius: 0 6px 6px 0; }
+    .comment-input-wrap { position: relative; margin-top: 12px; }
+    .comment-textarea { width: 100%; padding: 8px 12px; border: 1px solid rgba(211,209,199,0.8); border-radius: 10px; font-size: 13px; background: rgba(255,255,255,0.7); outline: none; resize: none; font-family: inherit; min-height: 60px; margin-bottom: 0; }
+    .comment-textarea:focus { background: white; border-color: #888780; }
+    .mention-dropdown { position: absolute; bottom: calc(100% + 4px); left: 0; right: 0; background: white; border: 1px solid rgba(211,209,199,0.8); border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-height: 150px; overflow-y: auto; z-index: 300; display: none; }
+    .mention-dropdown.visible { display: block; }
+    .mention-option { padding: 8px 12px; font-size: 13px; cursor: pointer; transition: background 0.1s; }
+    .mention-option:hover { background: rgba(232,226,216,0.5); }
+    .btn-send-comment { margin-top: 8px; background: #444441; color: white; border: none; border-radius: 8px; padding: 6px 14px; font-size: 13px; cursor: pointer; float: right; }
+    .btn-send-comment:hover { background: #2C2C2A; }
 
     /* ── ЧЕКБОКС ── */
     .checkbox-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
@@ -219,12 +184,20 @@
     .panel-left.open { left: 0; }
     .panel-wide { right: -420px; width: 400px; }
     .panel-wide.open { right: 0; }
-
     .panel-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px 16px; border-bottom: 1px solid rgba(211,209,199,0.5); position: sticky; top: 0; background: rgba(245,240,232,0.97); z-index: 1; }
     .panel-header h2 { font-size: 16px; font-weight: 600; }
     .panel-close { background: none; border: none; cursor: pointer; font-size: 18px; color: #888780; padding: 4px 8px; border-radius: 6px; line-height: 1; transition: all 0.15s; }
     .panel-close:hover { background: rgba(232,226,216,0.8); color: #2C2C2A; }
     .panel-body { padding: 20px 24px; }
+
+    /* ── УВЕДОМЛЕНИЯ ── */
+    .notif-item { padding: 12px 24px; border-bottom: 1px solid rgba(211,209,199,0.3); cursor: pointer; transition: background 0.15s; }
+    .notif-item:hover { background: rgba(232,226,216,0.4); }
+    .notif-item.unread { background: rgba(232,226,216,0.25); border-left: 3px solid #E24B4A; }
+    .notif-text { font-size: 13px; color: #2C2C2A; margin-bottom: 4px; }
+    .notif-meta { font-size: 11px; color: #888780; }
+    .notif-mark-all { font-size: 12px; color: #5F5E5A; background: none; border: none; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
+    .notif-mark-all:hover { background: rgba(232,226,216,0.8); }
 
     /* ── НАСТРОЙКИ ── */
     .settings-section { margin-bottom: 24px; }
@@ -260,49 +233,9 @@
     .archive-item-meta { font-size: 12px; color: #888780; margin-bottom: 8px; }
     .archive-actions { display: flex; gap: 8px; }
     .btn-unarchive { font-size: 11px; color: #639922; background: #EAF3DE; border: none; border-radius: 4px; padding: 4px 12px; cursor: pointer; transition: all 0.15s; }
-    .btn-unarchive:hover { background: #C0DD97; transform: scale(1.02); }
+    .btn-unarchive:hover { background: #C0DD97; }
     .btn-delete-archive { font-size: 11px; color: #A32D2D; background: #FCEBEB; border: none; border-radius: 4px; padding: 4px 12px; cursor: pointer; transition: all 0.15s; }
-    .btn-delete-archive:hover { background: #F7C1C1; transform: scale(1.02); }
-
-
-
-    /* ── АНИМАЦИИ ── */
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
-    }
-
-    .dash-card {
-      background: rgba(255,255,255,0.7);
-      border-radius: 12px;
-      padding: 14px;
-      text-align: center;
-      border: 1px solid rgba(211,209,199,0.4);
-    }
-    .dash-card-value { font-size: 28px; font-weight: 700; color: #2C2C2A; }
-    .dash-card-label { font-size: 11px; color: #888780; margin-top: 4px; }
-    .dash-bar-row {
-      display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
-    }
-    .dash-bar-label { font-size: 12px; color: #444441; min-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .dash-bar-track { flex: 1; height: 8px; background: rgba(211,209,199,0.4); border-radius: 4px; overflow: hidden; }
-    .dash-bar-fill { height: 100%; border-radius: 4px; background: #5F5E5A; transition: width 0.5s ease; }
-    .dash-bar-count { font-size: 12px; color: #888780; min-width: 24px; text-align: right; }
-    .activity-bar {
-      flex: 1; background: rgba(95,94,90,0.2); border-radius: 4px 4px 0 0;
-      transition: height 0.4s ease; position: relative; cursor: default;
-      min-width: 32px;
-    }
-    .activity-bar:hover { background: rgba(95,94,90,0.4); }
-    .activity-label { flex: 1; font-size: 10px; color: #888780; text-align: center; min-width: 32px; }
-    .priority-badge {
-      display: flex; align-items: center; gap: 6px;
-      padding: 8px 14px; border-radius: 20px; font-size: 13px;
-    }
+    .btn-delete-archive:hover { background: #F7C1C1; }
 
     /* ── ДАШБОРД ── */
     @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
@@ -319,43 +252,31 @@
     .activity-bar:hover { background: rgba(95,94,90,0.4); }
     .activity-label { flex: 1; font-size: 10px; color: #888780; text-align: center; min-width: 32px; }
     .priority-badge { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 20px; font-size: 13px; }
-
   </style>
 </head>
 <body>
 
-
-    <!-- ══════════════ МОДАЛКА ДАШБОРД ══════════════ !-->
+<!-- ══════════════ ДАШБОРД ══════════════ -->
 <div class="modal-overlay" id="dashboardModal">
-  <div class="modal" style="width:700px;max-width:95vw;max-height:90vh;overflow-y:auto;">
+  <div class="modal" style="width:700px;max-width:95vw;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
       <h2>📊 Дашборд</h2>
       <button class="btn-cancel" onclick="closeDashboard()">✕</button>
     </div>
-
-    <!-- Карточки сверху -->
     <div id="dashCards" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;"></div>
-
-    <!-- График активности -->
     <div style="margin-bottom:24px;">
       <div style="font-size:12px;color:#888780;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Активность за 7 дней</div>
       <div id="activityChart" style="display:flex;align-items:flex-end;gap:8px;height:80px;"></div>
       <div id="activityLabels" style="display:flex;gap:8px;margin-top:4px;"></div>
     </div>
-
-    <!-- По колонкам -->
     <div style="margin-bottom:24px;">
       <div style="font-size:12px;color:#888780;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">По колонкам</div>
       <div id="dashColumns"></div>
     </div>
-
-    <!-- По приоритетам -->
     <div style="margin-bottom:24px;">
       <div style="font-size:12px;color:#888780;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">По приоритетам</div>
       <div id="dashPriorities" style="display:flex;gap:12px;flex-wrap:wrap;"></div>
     </div>
-
-    <!-- По пользователям -->
     <div id="dashUsersSection" style="display:none;">
       <div style="font-size:12px;color:#888780;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Топ сотрудников</div>
       <div id="dashUsers"></div>
@@ -384,13 +305,17 @@
         <span class="search-icon">🔍</span>
         <input class="search-input" id="searchInput" placeholder="Найти задачу..." oninput="renderBoard(allColumns, allTasks)" />
       </div>
+      <button class="header-btn" onclick="toggleBoardChat()">💬 Чат</button>
+      <a class="header-btn" href="/boards/" style="text-decoration:none;">Все доски</a>
     </div>
     <div class="header-right">
       <span class="user-badge" id="userBadge"></span>
-      <a href="/orgchart.html" class="header-btn" id="btnOrgChart" style="display:none;text-decoration:none;">🏢 Структура</a>
+      <button class="notif-btn" id="btnNotif" onclick="toggleNotifications()">
+        🔔<span class="notif-badge" id="notifBadge">0</span>
+      </button>
       <button class="header-btn" onclick="toggleArchive()">📦 Архив</button>
       <button class="header-btn" id="btnStats" onclick="openStats()" style="display:none;">📊 Статистика</button>
-      <button class="header-btn" id="btnUsers" onclick="toggleUsers()" style="display:none;">👥 Пользователи</button>
+      <button class="header-btn" onclick="toggleBoardMembers()">👥 Участники</button>
       <button class="header-btn" id="settingsToggle" onclick="toggleSettings()" style="display:none;">⚙ Настройки</button>
       <button class="header-btn" onclick="logout()">Выйти</button>
     </div>
@@ -407,38 +332,113 @@
     </select>
   </div>
 
-  <div class="board-wrapper">
-    <div class="board" id="board">
-      <button class="btn-add-column" id="btnAddColumn" onclick="openAddColumn()" style="display:none;">
-        + Добавить колонку
-      </button>
+  <div class="board-wrapper" style="display:flex;align-items:flex-start;gap:16px;">
+    <div class="board" id="board" style="flex:1;min-width:0;">
+      <button class="btn-add-column" id="btnAddColumn" onclick="openAddColumn()" style="display:none;">+ Добавить колонку</button>
     </div>
+  </div>
+  <div class="board-chat-panel" id="boardChatPanel">
+<div class="board-chat-header">
+    <div class="chat-title">Чат доски <span id="chatUnreadBadge" style="display:none; background:#E24B4A; border-radius:10px; padding:0px 6px; margin-left:6px; font-size:11px;">0</span></div>
+    <div style="display:flex;gap:8px;align-items:center;">
+        <button class="header-btn" onclick="toggleBoardChat()">✕</button>
+    </div>
+</div>
+    <div class="board-chat-reply" id="boardChatReplyNotice">
+      <span>Вы отвечаете на сообщении</span>
+      <div class="reply-preview" id="boardChatReplyPreview"></div>
+      <button class="header-btn" style="padding:4px 8px;font-size:12px;" onclick="cancelBoardChatReply()">Отменить</button>
+    </div>
+    <div class="board-chat-list" id="boardChatList">Выберите доску, чтобы открыть чат.</div>
+    <div class="board-chat-input">
+      <textarea id="boardChatInput" placeholder="Написать сообщение..." onkeypress="if(event.key==='Enter' && !event.shiftKey){ sendBoardMessage(); event.preventDefault(); }"></textarea>
+      <button class="btn-primary" onclick="sendBoardMessage()">Отправить</button>
+    </div>
+    <div class="board-chat-resize-handle" id="boardChatResizeHandle"></div>
   </div>
 </div>
 
 <!-- ══════════════ МОДАЛКА: ЗАДАЧА ══════════════ -->
 <div class="modal-overlay" id="taskModal">
-  <div class="modal">
+  <div class="modal task-modal-wide">
     <h2 id="taskModalTitle">Новая задача</h2>
-    <label>Название</label>
-    <input type="text" id="taskTitle" placeholder="Название задачи" />
-    <label>Комментарий</label>
-    <textarea id="taskComment" placeholder="Заметка (необязательно)"></textarea>
-    <label>Приоритет</label>
-    <select id="taskPriority">
-      <option value="low">🟢 Низкий</option>
-      <option value="medium" selected>🟡 Средний</option>
-      <option value="high">🔴 Высокий</option>
-    </select>
-    <label>Дедлайн</label>
-    <input type="date" id="taskDeadline" />
-    <div class="checkbox-row">
-      <input type="checkbox" id="taskChiefGoal" />
-      <label for="taskChiefGoal">В целях у Главного Специалиста</label>
+    <div class="task-tabs">
+      <button class="task-tab active" onclick="switchTab('details')">📋 Детали</button>
+      <button class="task-tab" onclick="switchTab('assignees')" id="tabAssignees">👥 Исполнители</button>
+      <button class="task-tab" onclick="switchTab('comments')" id="tabComments">💬 Комментарии</button>
     </div>
-    <div class="modal-buttons">
+
+    <!-- ДЕТАЛИ -->
+    <div class="task-tab-content active" id="tabDetails">
+      <label>Название</label>
+      <input type="text" id="taskTitle" placeholder="Название задачи" />
+      <label>Описание</label>
+      <textarea id="taskComment" placeholder="Описание задачи (необязательно)"></textarea>
+      <label>Приоритет</label>
+      <select id="taskPriority">
+        <option value="low">🟢 Низкий</option>
+        <option value="medium" selected>🟡 Средний</option>
+        <option value="high">🔴 Высокий</option>
+      </select>
+      <label>Дедлайн</label>
+      <input type="date" id="taskDeadline" />
+      <div class="checkbox-row">
+        <input type="checkbox" id="taskChiefGoal" />
+        <label for="taskChiefGoal">В целях у Главного Специалиста</label>
+      </div>
+    </div>
+
+    <!-- ИСПОЛНИТЕЛИ -->
+    <div class="task-tab-content" id="tabAssigneesContent">
+      <label>Добавить исполнителя</label>
+      <select id="assigneeSelect" onchange="addAssignee(this.value)">
+        <option value="">Выбрать пользователя...</option>
+      </select>
+      <div class="assignees-list" id="assigneesList"></div>
+    </div>
+
+    <!-- КОММЕНТАРИИ -->
+    <div class="task-tab-content" id="tabCommentsContent">
+      <div id="commentsList" style="max-height:200px;overflow-y:auto;margin-bottom:12px;"></div>
+      <div class="comment-input-wrap">
+        <div class="mention-dropdown" id="mentionDropdown"></div>
+        <textarea class="comment-textarea" id="commentInput" placeholder="Написать комментарий... Используйте @ для упоминания" oninput="handleCommentInput(this)"></textarea>
+      </div>
+      <button class="btn-send-comment" onclick="sendComment()">Отправить</button>
+      <div style="clear:both;"></div>
+    </div>
+
+    <div class="modal-buttons" style="margin-top:16px;">
       <button class="btn-cancel" onclick="closeTaskModal()">Отмена</button>
       <button class="btn-primary" onclick="saveTask()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ МОДАЛКА: СОЗДАТЬ ДОСКУ ══════════════ -->
+<div class="modal-overlay" id="boardModal">
+  <div class="modal">
+    <h2>Новая доска</h2>
+    <label>Название доски</label>
+    <input type="text" id="boardName" placeholder="Название доски" />
+    <label>Описание</label>
+    <textarea id="boardDescription" placeholder="Описание доски (необязательно)"></textarea>
+    <label>Тип доступа</label>
+    <select id="boardPrivacy">
+      <option value="public">Публичная</option>
+      <option value="private">Приватная</option>
+    </select>
+    <div class="checkbox-row">
+      <input type="checkbox" id="boardAllowAnyone" checked />
+      <label for="boardAllowAnyone">Может просматривать любой</label>
+    </div>
+    <label>Участники (редакторы)</label>
+    <input type="text" id="boardParticipants" placeholder="IDs через запятую, например 2,3" />
+    <label>Зрители</label>
+    <input type="text" id="boardViewers" placeholder="IDs через запятую, например 4,5" />
+    <div class="modal-buttons">
+      <button class="btn-cancel" onclick="closeBoardModal()">Отмена</button>
+      <button class="btn-primary" onclick="saveBoard()">Создать</button>
     </div>
   </div>
 </div>
@@ -458,92 +458,17 @@
   </div>
 </div>
 
-<!-- ══════════════ МОДАЛКА: СТАТИСТИКА ══════════════ -->
-<div class="modal-overlay" id="statsModal">
-  <div class="modal">
-    <h2>📊 Статистика по колонкам</h2>
-    <div id="statsContent"></div>
-    <div class="modal-buttons" style="margin-top:16px;">
-      <button class="btn-cancel" onclick="closeStats()">Закрыть</button>
-    </div>
-  </div>
-</div>
 
-<!-- ══════════════ НАСТРОЙКИ ══════════════ -->
-<div class="side-panel panel-right" id="settingsPanel">
+<!-- ══════════════ УВЕДОМЛЕНИЯ ══════════════ -->
+<div class="side-panel panel-wide" id="notifPanel">
   <div class="panel-header">
-    <h2>Настройки доски</h2>
-    <button class="panel-close" onclick="toggleSettings()">✕</button>
+    <h2>Уведомления</h2>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="notif-mark-all" onclick="markAllRead()">Прочитать все</button>
+      <button class="panel-close" onclick="toggleNotifications()">✕</button>
+    </div>
   </div>
-  <div class="panel-body">
-
-    <div class="settings-section">
-      <label>Название системы</label>
-      <input type="text" class="settings-input" id="systemNameInput" placeholder="Task Manager" />
-      <button class="btn-save-setting" onclick="saveSystemName()">Сохранить</button>
-    </div>
-
-    <div class="settings-section">
-      <label>Готовые темы</label>
-      <div class="theme-grid">
-        <div class="theme-swatch" style="background:linear-gradient(135deg,#F5EDD6,#E8CDA0);" data-theme="sand" onclick="applyTheme('sand')"><span>Песок</span></div>
-        <div class="theme-swatch" style="background:linear-gradient(135deg,#EEF0FB,#D8D2F0);" data-theme="lavender" onclick="applyTheme('lavender')"><span>Лаванда</span></div>
-        <div class="theme-swatch" style="background:linear-gradient(135deg,#E8F5F0,#BFE2D8);" data-theme="mint" onclick="applyTheme('mint')"><span>Мята</span></div>
-        <div class="theme-swatch" style="background:linear-gradient(135deg,#FDF0F0,#F5CEBF);" data-theme="peach" onclick="applyTheme('peach')"><span>Персик</span></div>
-        <div class="theme-swatch" style="background:linear-gradient(135deg,#EEF2F7,#C8D6E8);" data-theme="steel" onclick="applyTheme('steel')"><span>Сталь</span></div>
-        <div class="theme-swatch" style="background:linear-gradient(135deg,#1A1A2E,#0F3460);" data-theme="night" onclick="applyTheme('night')"><span style="color:rgba(255,255,255,0.7)">Ночь</span></div>
-        <div class="theme-swatch" style="background:linear-gradient(135deg,#F5F0E8,#E8E2D8);" data-theme="beige" onclick="applyTheme('beige')"><span>Бежевая</span></div>
-        <div class="theme-swatch" style="background:linear-gradient(135deg,#F0F4F8,#DDE8F0);" data-theme="blue" onclick="applyTheme('blue')"><span>Голубая</span></div>
-        <div class="theme-swatch" style="background:linear-gradient(135deg,#FAF0F0,#F0DEDE);" data-theme="rose" onclick="applyTheme('rose')"><span>Розовая</span></div>
-      </div>
-    </div>
-
-    <div class="settings-section">
-      <label>Свой градиент фона</label>
-      <div class="gradient-builder">
-        <div class="color-row">
-          <span>Цвет 1</span>
-          <input type="color" id="gradColor1" value="#F5EDD6" oninput="applyGradient()">
-        </div>
-        <div class="color-row">
-          <span>Цвет 2</span>
-          <input type="color" id="gradColor2" value="#E8CDA0" oninput="applyGradient()">
-        </div>
-        <div class="opacity-row">
-          <span>Угол</span>
-          <input type="range" id="gradAngle" min="0" max="360" value="135" oninput="applyGradient(); document.getElementById('gradAngleVal').textContent=this.value+'°'">
-          <span class="opacity-val" id="gradAngleVal">135°</span>
-        </div>  
-      </div>
-    </div>
-
-    <div class="settings-section">
-      <label>Цвета элементов</label>
-      <div class="color-row"><span>Шапка</span><input type="color" id="colorHeader" value="#EDE8DF" oninput="applyCustomColor('header', this.value)"></div>
-      <div class="color-row"><span>Карточки</span><input type="color" id="colorCard" value="#FFFFFF" oninput="applyCustomColor('card', this.value)"></div>
-    </div>
-
-    <div class="settings-section">
-      <label>Прозрачность</label>
-      <div class="opacity-row">
-        <span>Шапка</span>
-        <input type="range" id="opacityHeader" min="50" max="100" value="85" oninput="applyOpacity('Header', this.value)">
-        <span class="opacity-val" id="opacityHeaderVal">85%</span>
-      </div>
-      <div class="opacity-row">
-        <span>Колонки</span>
-        <input type="range" id="opacityColumn" min="30" max="100" value="70" oninput="applyOpacity('Column', this.value)">
-        <span class="opacity-val" id="opacityColumnVal">70%</span>
-      </div>
-      <div class="opacity-row">
-        <span>Карточки</span>
-        <input type="range" id="opacityCard" min="50" max="100" value="85" oninput="applyOpacity('Card', this.value)">
-        <span class="opacity-val" id="opacityCardVal">85%</span>
-      </div>
-    </div>
-
-    <button class="btn-reset" onclick="resetTheme()">Сбросить к стандарту</button>
-  </div>
+  <div id="notifList"></div>
 </div>
 
 <!-- ══════════════ ПОЛЬЗОВАТЕЛИ ══════════════ -->
@@ -566,12 +491,13 @@
 
 <script>
   const API = '/api';
-  const ROLE_HIERARCHY = { admin:5, chief:4, lead:3, specialist:2, junior:1 };
+  const ROLE_HIERARCHY = { admin:5, chief:4, lead:3, specialist:2, senior:1, junior:1 };
   let token = localStorage.getItem('token');
   let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
   let currentColumnId = null;
   let editingTaskId = null;
   let editingColumnId = null;
+  let currentBoardId = null;
   let allTasks = [];
   let allColumns = [];
   let allUsers = [];
@@ -581,10 +507,26 @@
   let draggedTaskId = null;
   let draggedColEl = null;
   let boardInterval = null;
+  let notifInterval = null;
+  let selectedAssignees = [];
+  let mentionSearching = false;
+  let mentionStart = 0;
+  let currentBoardMembership = null;
+  let allBoards = [];
+  let replyToCommentId = null;
+  let boardChatReplyToId = null;
+  let chatReplyMap = {};
+  let boardChatDragging = false;
+  let boardChatResizing = false;
+  let boardChatDragOffset = { x: 0, y: 0 };
+  let boardChatStartSize = { w: 0, h: 0 };
 
-  // ══════════════════════════════
-  //         АВТОРИЗАЦИЯ
-  // ══════════════════════════════
+
+
+  
+  // ══════════════════════════════════════
+  //            АВТОРИЗАЦИЯ
+  // ══════════════════════════════════════
 
   async function login() {
     const username = document.getElementById('loginUsername').value.trim();
@@ -592,16 +534,13 @@
     const errorEl = document.getElementById('loginError');
     errorEl.style.display = 'none';
     try {
-      const res = await fetch(`${API}/token/`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
+      const res = await fetch(`${API}/token/`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username, password}) });
       if (!res.ok) throw new Error();
       const data = await res.json();
       token = data.access;
       localStorage.setItem('token', token);
       await loadCurrentUser(username);
-      showApp();
+      window.location.href = '/boards/';
     } catch { errorEl.style.display = 'block'; }
   }
 
@@ -614,68 +553,158 @@
   }
 
   function logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('currentUser');
+    localStorage.removeItem('token'); localStorage.removeItem('currentUser');
     if (boardInterval) clearInterval(boardInterval);
+    if (notifInterval) clearInterval(notifInterval);
     token = null; currentUser = null;
     document.getElementById('app').style.display = 'none';
     document.getElementById('loginScreen').style.display = 'flex';
   }
 
-  function authHeaders() {
-    return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
-  }
-
-  function canManage() { return ['admin','chief','lead'].includes(currentUser?.role); }
-  function canCreateColumn() { return ['admin','chief'].includes(currentUser?.role); }
+  function authHeaders() { return {'Content-Type':'application/json','Accept':'application/json','Authorization':`Bearer ${token}`}; }
+  function canManage() { return ['admin','chief','lead'].includes(currentUser?.role) || currentBoardMembership?.role === 'admin'; }
+  function canCreateColumn() { return ['admin','chief'].includes(currentUser?.role) || currentBoardMembership?.edit_columns; }
+  function canReorderColumns() { return ['admin','chief'].includes(currentUser?.role) || currentBoardMembership?.reorder_columns; }
+  function canViewAllTasks() { return ['admin','chief','lead'].includes(currentUser?.role) || currentBoardMembership?.view_all_tasks; }
   function canChangeRoles() { return ['admin','chief','lead'].includes(currentUser?.role); }
-  function isChief() { return ['admin','chief'].includes(currentUser?.role); }
   function isSpecialist() { return currentUser?.role === 'specialist'; }
 
-  // ══════════════════════════════
-  //           ДОСКА
-  // ══════════════════════════════
+  // ══════════════════════════════════════
+  //              СТАРТ
+  // ══════════════════════════════════════
 
-  async function loadBoard() {
-    try {
-      const [colRes, taskRes] = await Promise.all([
-        fetch(`${API}/columns/`, { headers: authHeaders() }),
-        fetch(`${API}/tasks/`, { headers: authHeaders() })
-      ]);
-      if (colRes.status === 401) { logout(); return; }
-      const cols = await colRes.json();
-      const tasks = await taskRes.json();
-      allColumns = cols.results || cols;
-      allTasks = tasks.results || tasks;
-      if (!Array.isArray(allColumns)) return;
-      renderBoard(allColumns, allTasks);
-      updateStats();
-    } catch(e) { console.error(e); }
-  }
-
-  async function showApp() {
+async function showApp() {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     document.getElementById('userBadge').textContent = currentUser?.full_name || currentUser?.username || '';
-    document.getElementById('btnAddColumn').style.display = canCreateColumn() ? 'block' : 'none';
-    document.getElementById('settingsToggle').style.display = canManage() ? 'block' : 'none';
-    document.getElementById('btnUsers').style.display = canManage() ? 'block' : 'none';
-    document.getElementById('btnStats').style.display = canManage() ? 'block' : 'none';
+    
+    const btnAddColumn = document.getElementById('btnAddColumn');
+    if (btnAddColumn) btnAddColumn.style.display = canCreateColumn() ? 'block' : 'none';
+    
+    const settingsToggle = document.getElementById('settingsToggle');
+    if (settingsToggle) settingsToggle.style.display = canManage() ? 'block' : 'none';
+    
+    // Кнопки btnUsers и btnOrgChart удалены — убираем обращения
+    const btnStats = document.getElementById('btnStats');
+    if (btnStats) btnStats.style.display = canManage() ? 'block' : 'none';
+    
     const canSeeOrgChart = ['admin','chief','lead','specialist'].includes(currentUser?.role);
-document.getElementById('btnOrgChart').style.display = canSeeOrgChart ? 'block' : 'none';
-    if (currentUser?.role === 'specialist' || currentUser?.role === 'lead' || currentUser?.role === 'chief' || currentUser?.role === 'admin') {
-      document.getElementById('filterBar').classList.add('visible');
-      await loadFilterUsers();
+    // Кнопка структуры теперь на странице boards.html, здесь не нужна
+    // document.getElementById('btnOrgChart').style.display = canSeeOrgChart ? 'block' : 'none';
+
+    if (['specialist','lead','chief','admin'].includes(currentUser?.role)) {
+        const filterBar = document.getElementById('filterBar');
+        if (filterBar) filterBar.classList.add('visible');
+        await loadFilterUsers();
     }
+    document.getElementById('filterAll').style.display = canViewAllTasks() ? 'inline-block' : 'none';
 
+
+    await loadBoards();
+    if (!currentBoardId && allBoards.length) {
+        currentBoardId = allBoards[0].id;
+        localStorage.setItem('currentBoardId', currentBoardId);
+    }
     currentFilter = 'my';
-    document.getElementById('filterMy')?.classList.add('active');
-
+    const filterMy = document.getElementById('filterMy');
+    if (filterMy) filterMy.classList.add('active');
+    
     await loadBoardSettings();
+    await loadAllUsers();
+    await loadBoards();
+    const urlBoard = new URLSearchParams(window.location.search).get('board');
+    if (urlBoard) {
+        currentBoardId = parseInt(urlBoard);
+        localStorage.setItem('currentBoardId', currentBoardId);
+    }
     loadTheme();
-    loadBoard();
+    await loadBoard();
+    loadUnreadCount();
+    initBoardChatInteractions();
     if (boardInterval) clearInterval(boardInterval);
+    if (notifInterval) clearInterval(notifInterval);
     boardInterval = setInterval(loadBoard, 5000);
+    notifInterval = setInterval(loadUnreadCount, 15000);
+}
+
+  async function loadAllUsers() {
+    const res = await fetch(`${API}/users/`, { headers: authHeaders() });
+    const data = await res.json();
+    allUsers = data.results || data;
+  }
+
+async function loadBoards() {
+    try {
+        const res = await fetch(`${API}/boards/`, { headers: authHeaders() });
+        if (!res.ok) return;
+        const data = await res.json();
+        allBoards = data.results || data;
+        const stored = localStorage.getItem('currentBoardId');
+        if (!currentBoardId && stored) currentBoardId = parseInt(stored);
+        if (!currentBoardId && allBoards.length) currentBoardId = allBoards[0]?.id;
+        // Если выбранная доска недоступна — сбрасываем
+        if (currentBoardId && !allBoards.some(b => b.id === currentBoardId)) {
+            currentBoardId = allBoards[0]?.id || null;
+            if (currentBoardId) localStorage.setItem('currentBoardId', currentBoardId);
+        }
+    } catch(e) { console.error(e); }
+}
+
+  function changeBoard(boardId) {
+    if (!boardId) return;
+    currentBoardId = parseInt(boardId);
+    localStorage.setItem('currentBoardId', currentBoardId);
+    loadBoard();
+    loadBoardChat();
+  }
+
+  function openCreateBoard() {
+    document.getElementById('boardName').value = '';
+    document.getElementById('boardDescription').value = '';
+    document.getElementById('boardPrivacy').value = 'public';
+    document.getElementById('boardAllowAnyone').checked = true;
+    document.getElementById('boardParticipants').value = '';
+    document.getElementById('boardViewers').value = '';
+    document.getElementById('boardModal').classList.add('active');
+  }
+
+  function closeBoardModal() {
+    document.getElementById('boardModal').classList.remove('active');
+  }
+
+  async function saveBoard() {
+    const name = document.getElementById('boardName').value.trim();
+    const description = document.getElementById('boardDescription').value.trim();
+    const privacy = document.getElementById('boardPrivacy').value;
+    const allowAnyone = document.getElementById('boardAllowAnyone').checked;
+    const participants = document.getElementById('boardParticipants').value
+      .split(',').map(v => parseInt(v.trim())).filter(Boolean);
+    const viewers = document.getElementById('boardViewers').value
+      .split(',').map(v => parseInt(v.trim())).filter(Boolean);
+    if (!name) return;
+    const res = await fetch(`${API}/boards/`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        name, description, privacy,
+        allow_anyone_view: allowAnyone,
+        participant_ids: participants,
+        viewer_ids: viewers
+      })
+    });
+    if (!res.ok) {
+      alert('Не удалось создать доску');
+      return;
+    }
+    const created = await res.json();
+    closeBoardModal();
+    await loadBoards();
+    if (created.id) {
+      currentBoardId = created.id;
+      localStorage.setItem('currentBoardId', currentBoardId);
+      loadBoard();
+      loadBoardChat();
+    }
   }
 
   async function loadBoardSettings() {
@@ -683,7 +712,6 @@ document.getElementById('btnOrgChart').style.display = canSeeOrgChart ? 'block' 
       const res = await fetch(`${API}/board-settings/current/`, { headers: authHeaders() });
       if (!res.ok) return;
       const data = await res.json();
-      
       if (data.system_name) {
         document.getElementById('systemName').textContent = data.system_name;
         document.getElementById('loginTitle').textContent = data.system_name;
@@ -691,31 +719,13 @@ document.getElementById('btnOrgChart').style.display = canSeeOrgChart ? 'block' 
         const input = document.getElementById('systemNameInput');
         if (input) input.value = data.system_name;
       }
-      
       if (data.bg_gradient) {
         document.body.style.background = data.bg_gradient;
-        const theme = {
-          grad: data.bg_gradient,
-          g1: data.bg_color1 || '#F5EDD6',
-          g2: data.bg_color2 || '#E8CDA0',
-          angle: data.bg_angle || 135,
-          header: data.header_color || '#EDE8DF',
-          card: data.card_color || '#FFFFFF'
-        };
+        const theme = { grad: data.bg_gradient, g1: data.bg_color1||'#F5EDD6', g2: data.bg_color2||'#E8CDA0', angle: data.bg_angle||135, header: data.header_color||'#EDE8DF', card: data.card_color||'#FFFFFF' };
         localStorage.setItem('boardTheme', JSON.stringify(theme));
-        
-        if (data.bg_color1 && document.getElementById('gradColor1')) {
-          document.getElementById('gradColor1').value = data.bg_color1;
-          document.getElementById('gradColor2').value = data.bg_color2 || '#E8CDA0';
-          document.getElementById('gradAngle').value = data.bg_angle || 135;
-          document.getElementById('gradAngleVal').textContent = (data.bg_angle || 135) + '°';
-        }
-        if (data.header_color && document.getElementById('colorHeader')) {
-          document.getElementById('colorHeader').value = data.header_color;
-        }
-        if (data.card_color && document.getElementById('colorCard')) {
-          document.getElementById('colorCard').value = data.card_color;
-        }
+        if (data.bg_color1) { document.getElementById('gradColor1').value = data.bg_color1; document.getElementById('gradColor2').value = data.bg_color2||'#E8CDA0'; document.getElementById('gradAngle').value = data.bg_angle||135; document.getElementById('gradAngleVal').textContent = (data.bg_angle||135)+'°'; }
+        if (data.header_color) document.getElementById('colorHeader').value = data.header_color;
+        if (data.card_color) document.getElementById('colorCard').value = data.card_color;
       }
     } catch(e) { console.error(e); }
   }
@@ -724,176 +734,294 @@ document.getElementById('btnOrgChart').style.display = canSeeOrgChart ? 'block' 
     const res = await fetch(`${API}/users/subordinates/`, { headers: authHeaders() });
     if (!res.ok) return;
     const data = await res.json();
-    allUsers = data.results || data;
+    const subordinates = data.results || data;
     const select = document.getElementById('filterUserSelect');
     while (select.options.length > 1) select.remove(1);
-    allUsers.forEach(u => {
+    subordinates.forEach(u => {
       const opt = document.createElement('option');
-      opt.value = u.id;
-      opt.textContent = u.full_name || u.username;
+      opt.value = u.id; opt.textContent = u.full_name || u.username;
       select.appendChild(opt);
     });
   }
 
   function setFilter(type, userId) {
-    currentFilter = type;
-    filterUserId = userId ? parseInt(userId) : null;
+    if (type === 'all' && !canViewAllTasks()) return;
+    currentFilter = type; filterUserId = userId ? parseInt(userId) : null;
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     if (type === 'my') document.getElementById('filterMy')?.classList.add('active');
     if (type === 'all') document.getElementById('filterAll')?.classList.add('active');
-    if (type === 'user') document.getElementById('filterUserSelect').value = userId || '';
     renderBoard(allColumns, allTasks);
   }
 
   function getFilteredTasks(tasks) {
-    if (currentFilter === 'all') return tasks;
-    if (currentFilter === 'user' && filterUserId) {
-      return tasks.filter(t => t.created_by === filterUserId);
-    }
-    return tasks.filter(t => t.created_by === currentUser?.id);
+    if (currentFilter === 'all' && canViewAllTasks()) return tasks;
+    if (currentFilter === 'user' && filterUserId) return tasks.filter(t => t.created_by === filterUserId || (t.assigned_to||[]).some(a => a.id === filterUserId));
+    return tasks.filter(t => t.created_by === currentUser?.id || (t.assigned_to||[]).some(a => a.id === currentUser?.id));
+  }
+
+  // ══════════════════════════════════════
+  //               ДОСКА
+  // ══════════════════════════════════════
+
+  async function loadBoard() {
+    try {
+      const boardQuery = currentBoardId ? `?board=${currentBoardId}` : '';
+      const [colRes, taskRes, membershipRes] = await Promise.all([
+        fetch(`${API}/columns/${boardQuery}`, { headers: authHeaders() }),
+        fetch(`${API}/tasks/${boardQuery}`, { headers: authHeaders() }),
+        currentBoardId ? fetch(`${API}/boards/${currentBoardId}/`, { headers: authHeaders() }) : Promise.resolve(null)
+      ]);
+      if (colRes.status === 401) { logout(); return; }
+      const cols = await colRes.json(); const tasks = await taskRes.json();
+      allColumns = cols.results || cols; allTasks = tasks.results || tasks;
+      if (membershipRes) {
+        const boardData = await membershipRes.json();
+        const membership = boardData.memberships?.find(m => m.user?.id === currentUser?.id);
+        currentBoardMembership = membership || null;
+      } else {
+        currentBoardMembership = null;
+      }
+      if (!Array.isArray(allColumns)) return;
+      renderBoard(allColumns, allTasks);
+      updateStats();
+      loadBoardChat();
+    } catch(e) { console.error(e); }
   }
 
   function renderBoard(columns, tasks) {
     const board = document.getElementById('board');
     const btnAdd = document.getElementById('btnAddColumn');
     board.innerHTML = '';
-
-    const t = JSON.parse(localStorage.getItem('boardTheme') || '{}');
-    const cardColor = t.card || '#FFFFFF';
-    const cardOp = (t.opacityCard || 85) / 100;
-    const colOp = (t.opacityColumn || 70) / 100;
-    const search = document.getElementById('searchInput')?.value?.toLowerCase() || '';
-
+    const t = JSON.parse(localStorage.getItem('boardTheme')||'{}');
+    const cardColor = t.card||'#FFFFFF'; const cardOp = (t.opacityCard||85)/100; const colOp = (t.opacityColumn||70)/100;
+    const search = document.getElementById('searchInput')?.value?.toLowerCase()||'';
     const filteredTasks = getFilteredTasks(tasks);
 
     columns.forEach(col => {
       let colTasks = filteredTasks.filter(t => t.column === col.id);
-      if (search) colTasks = colTasks.filter(t =>
-        t.title.toLowerCase().includes(search) || (t.comment||'').toLowerCase().includes(search)
-      );
-
+      if (search) colTasks = colTasks.filter(t => t.title.toLowerCase().includes(search)||(t.comment||'').toLowerCase().includes(search));
       const colEl = document.createElement('div');
-      colEl.className = 'column' + (col.is_collapsed ? ' collapsed' : '');
-      colEl.dataset.colId = col.id;
-      colEl.style.background = hexToRgba(col.color || '#E8E2D8', colOp);
-
+      colEl.className = 'column'; colEl.dataset.colId = col.id;
+      colEl.style.background = hexToRgba(col.color||'#E8E2D8', colOp);
       colEl.innerHTML = `
-        <div class="column-header" style="cursor:${canManage()?'grab':'default'}">
+        <div class="column-header" style="cursor:${canReorderColumns()?'grab':'default'}">
           <span class="column-title">${col.name}</span>
-          ${!col.is_collapsed ? `<span class="column-count">${colTasks.length}</span>` : ''}
+          <span class="column-count">${colTasks.length}</span>
           <div class="column-actions">
-            ${canManage() ? `<button class="col-btn" onclick="event.stopPropagation();openEditColumn(${col.id}, '${escHtml(col.name)}', '${col.color||'#E8E2D8'}')">✎</button>` : ''}
-            ${canCreateColumn() ? `<button class="col-btn" onclick="event.stopPropagation();deleteColumn(${col.id})" style="color:#E24B4A;">✕</button>` : ''}
+            ${canManage()?`<button class="col-btn" onclick="event.stopPropagation();openEditColumn(${col.id},'${escHtml(col.name)}','${col.color||'#E8E2D8'}')">✎</button>`:''}
+            ${canCreateColumn()?`<button class="col-btn" onclick="event.stopPropagation();deleteColumn(${col.id})" style="color:#E24B4A;">✕</button>`:''}
           </div>
         </div>
         <div class="tasks" id="tasks-${col.id}">
           ${colTasks.map(t => renderTask(t, cardColor, cardOp)).join('')}
         </div>
-        <button class="btn-add-task" onclick="openAddTask(${col.id})">+ Добавить задачу</button>
-      `;
-
+        <button class="btn-add-task" onclick="openAddTask(${col.id})">+ Добавить задачу</button>`;
       if (canManage()) {
-        colEl.setAttribute('draggable', 'true');
-        colEl.querySelector('.column-header').addEventListener('mousedown', () => { colEl.setAttribute('draggable', 'true'); });
+        colEl.setAttribute('draggable','true');
         colEl.addEventListener('dragstart', onColDragStart);
         colEl.addEventListener('dragend', onColDragEnd);
         colEl.addEventListener('dragover', onColDragOver);
         colEl.addEventListener('drop', onColDrop);
       }
-
       board.appendChild(colEl);
     });
-
     board.appendChild(btnAdd);
-
-    document.querySelectorAll('.task-card').forEach(card => {
-      card.addEventListener('dragstart', onDragStart);
-      card.addEventListener('dragend', onDragEnd);
-    });
-    document.querySelectorAll('.column .tasks').forEach(zone => {
-      zone.addEventListener('dragover', onDragOver);
-      zone.addEventListener('dragleave', onDragLeave);
-      zone.addEventListener('drop', onDrop);
-    });
+    document.querySelectorAll('.task-card').forEach(card => { card.addEventListener('dragstart', onDragStart); card.addEventListener('dragend', onDragEnd); });
+    document.querySelectorAll('.column .tasks').forEach(zone => { zone.addEventListener('dragover', onDragOver); zone.addEventListener('dragleave', onDragLeave); zone.addEventListener('drop', onDrop); });
   }
 
   function renderTask(task, cardColor, cardOp) {
-    const column = allColumns.find(col => col.id === task.column);
-    const isCompletedColumn = column?.name?.toLowerCase() === 'выполнено';
-    
-    const deadline = task.deadline && !isCompletedColumn ? deadlineInfo(task.deadline) : null;
+    const col = allColumns.find(c => c.id === task.column);
+    const isDone = col?.name?.toLowerCase() === 'выполнено';
+    const deadline = task.deadline && !isDone ? deadlineInfo(task.deadline) : null;
     const bg = hexToRgba(cardColor, cardOp);
     const isOtherUser = task.created_by !== currentUser?.id;
-    const isChiefGoal = task.is_chief_goal;
-
+    const assignees = task.assigned_to || [];
+    const isAssigned = assignees.some(a => a.id === currentUser?.id);
     let classes = 'task-card';
-    if (isChiefGoal) classes += ' chief-goal';
-    else if (isOtherUser && isSpecialist()) classes += ' other-user';
-
+    if (task.is_chief_goal) classes += ' chief-goal';
+    else if (isOtherUser && isSpecialist() && !isAssigned) classes += ' other-user';
+    const assignedBy = task.assigned_by_name ? `<span style="font-size:11px;color:#9B8FD4;">👤 ${task.assigned_by_name}</span>` : '';
+    const avatars = assignees.length ? `<div class="assignee-avatars">${assignees.slice(0,3).map(a=>`<div class="assignee-avatar-small" title="${a.full_name||a.username}">${(a.full_name||a.username||'?')[0].toUpperCase()}</div>`).join('')}${assignees.length>3?`<div class="assignee-avatar-small">+${assignees.length-3}</div>`:''}</div>` : '';
+    const commentsCount = task.comments_count > 0 ? `<span style="font-size:11px;color:#888780;">💬 ${task.comments_count}</span>` : '';
     return `
-      <div class="${classes}" style="${isChiefGoal ? '' : `background:${bg}`}"
-           draggable="true" data-task-id="${task.id}" data-column-id="${task.column}">
+      <div class="${classes}" style="${task.is_chief_goal?'':`background:${bg}`}" draggable="true" data-task-id="${task.id}" data-column-id="${task.column}">
         <div class="priority-bar priority-${task.priority}"></div>
         <div class="task-title">${escHtml(task.title)}</div>
-        ${task.comment ? `<div class="task-comment">${escHtml(task.comment)}</div>` : ''}
+        ${task.comment?`<div class="task-comment-preview">${escHtml(task.comment.slice(0,60))}${task.comment.length>60?'…':''}</div>`:''}
         <div class="task-meta">
-          ${isCompletedColumn ? 
-            `<span class="task-deadline deadline-completed">✓ Выполнено</span>` : 
-            deadline ? `<span class="task-deadline ${deadline.cls}">${deadline.label}</span>` : ''
-          }
-          ${isChiefGoal ? `<span class="chief-goal-badge">⭐ В целях ГС</span>` : ''}
-          ${isOtherUser && isSpecialist() ? `<span class="other-user-badge">${task.created_by_name}</span>` : ''}
-          ${canManage() && task.created_by_name ? `<span style="color:#888780;font-size:11px;">${task.created_by_name}</span>` : ''}
+          ${isDone?`<span class="task-deadline deadline-completed">✓ Выполнено</span>`:deadline?`<span class="task-deadline ${deadline.cls}">${deadline.label}</span>`:''}
+          ${task.is_chief_goal?`<span class="chief-goal-badge">⭐ В целях ГС</span>`:''}
+          ${isOtherUser&&isSpecialist()&&!isAssigned?`<span class="other-user-badge">${task.created_by_name}</span>`:''}
+          ${canManage()&&task.created_by_name?`<span style="color:#888780;font-size:11px;">${task.created_by_name}</span>`:''}
+          ${assignedBy}
         </div>
         <div class="task-footer">
-          <button class="task-action-btn" onclick="openEditTask(${task.id})">✎ Изменить</button>
-          <button class="task-action-btn" onclick="archiveTask(${task.id})">📦 Архив</button>
+          <div style="display:flex;gap:6px;align-items:center;">${avatars}${commentsCount}</div>
+          <div style="display:flex;gap:4px;">
+            <button class="task-action-btn" onclick="openEditTask(${task.id})">✎</button>
+            <button class="task-action-btn" onclick="archiveTask(${task.id})">📦</button>
+          </div>
         </div>
-      </div>
-    `;
+      </div>`;
   }
 
   function deadlineInfo(dateStr) {
     const today = new Date(); today.setHours(0,0,0,0);
-    const d = new Date(dateStr);
-    const diff = Math.ceil((d - today) / 86400000);
-    if (diff < 0) return { cls: 'deadline-overdue', label: 'Просрочено' };
-    if (diff === 0) return { cls: 'deadline-soon', label: 'Сегодня' };
-    if (diff <= 2) return { cls: 'deadline-soon', label: `Через ${diff} дн.` };
-    return { cls: 'deadline-ok', label: d.toLocaleDateString('ru') };
+    const d = new Date(dateStr); const diff = Math.ceil((d-today)/86400000);
+    if (diff<0) return {cls:'deadline-overdue',label:'Просрочено'};
+    if (diff===0) return {cls:'deadline-soon',label:'Сегодня'};
+    if (diff<=2) return {cls:'deadline-soon',label:`Через ${diff} дн.`};
+    return {cls:'deadline-ok',label:d.toLocaleDateString('ru')};
+  }
+
+async function sendBoardMessage() {
+    const text = document.getElementById('boardChatInput').value.trim();
+    if (!text) {
+        showNotification('Введите текст сообщения', 'error');
+        return;
+    }
+    if (!currentBoardId) {
+        showNotification('Выберите доску для чата', 'error');
+        return;
+    }
+    const boardExists = allBoards.some(b => b.id === currentBoardId);
+    if (!boardExists) {
+        showNotification('У вас нет доступа к этой доске', 'error');
+        return;
+    }
+    try {
+        const payload = { board: currentBoardId, text };
+        if (boardChatReplyToId) payload.reply_to_id = boardChatReplyToId;
+        const res = await fetch(`${API}/board-chat/`, {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+            let errorMsg = 'Не удалось отправить сообщение';
+            try {
+                const errData = await res.json();
+                errorMsg = errData.detail || errData.error || errorMsg;
+            } catch(e) {}
+            showNotification(`❌ ${errorMsg}`, 'error');
+            return;
+        }
+        document.getElementById('boardChatInput').value = '';
+        cancelBoardChatReply();
+        await loadBoardChat();
+        showNotification('💬 Сообщение отправлено', 'success');
+    } catch (e) {
+        console.error(e);
+        showNotification('❌ Ошибка сети', 'error');
+    }
+}
+
+  function setBoardChatReply(messageId) {
+    const message = chatReplyMap[messageId];
+    if (!message) return;
+    boardChatReplyToId = messageId;
+    const notice = document.getElementById('boardChatReplyNotice');
+    const preview = document.getElementById('boardChatReplyPreview');
+    notice.classList.add('active');
+    if (preview) preview.textContent = `${message.author_name}: ${message.text}`;
+  }
+
+  function cancelBoardChatReply() {
+    boardChatReplyToId = null;
+    const notice = document.getElementById('boardChatReplyNotice');
+    if (notice) notice.classList.remove('active');
+  }
+
+  function initBoardChatInteractions() {
+    const panel = document.getElementById('boardChatPanel');
+    const header = panel?.querySelector('.board-chat-header');
+    const resizeHandle = document.getElementById('boardChatResizeHandle');
+    if (header) {
+      header.addEventListener('mousedown', startBoardChatDrag);
+    }
+    if (resizeHandle) {
+      resizeHandle.addEventListener('mousedown', startBoardChatResize);
+    }
+    document.addEventListener('mousemove', onBoardChatPointerMove);
+    document.addEventListener('mouseup', stopBoardChatPointer);
+  }
+
+function startBoardChatDrag(event) {
+    if (event.button !== 0) return;
+    boardChatDragging = true;
+    const panel = document.getElementById('boardChatPanel');
+    const rect = panel.getBoundingClientRect();
+    boardChatDragOffset = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    // Убираем правую фиксацию, чтобы можно было свободно перемещать
+    panel.style.right = 'auto';
+    panel.style.left = `${rect.left}px`;
+    panel.style.top = `${rect.top}px`;
+    panel.style.bottom = 'auto';
+    event.preventDefault();
+}
+
+function startBoardChatResize(event) {
+    if (event.button !== 0) return;
+    boardChatResizing = true;
+    const panel = document.getElementById('boardChatPanel');
+    const rect = panel.getBoundingClientRect();
+    boardChatStartSize = { w: rect.width, h: rect.height, x: event.clientX, y: event.clientY };
+    panel.style.right = 'auto';
+    panel.style.width = `${rect.width}px`;
+    panel.style.height = `${rect.height}px`;
+    event.preventDefault();
+}
+
+
+  function onBoardChatPointerMove(event) {
+    const panel = document.getElementById('boardChatPanel');
+    if (!panel) return;
+    if (boardChatDragging) {
+      const x = event.clientX - boardChatDragOffset.x;
+      const y = event.clientY - boardChatDragOffset.y;
+      const minX = 10;
+      const minY = 10;
+      const maxX = window.innerWidth - panel.offsetWidth - 10;
+      const maxY = window.innerHeight - panel.offsetHeight - 10;
+      panel.style.left = `${Math.min(Math.max(x, minX), maxX)}px`;
+      panel.style.top = `${Math.min(Math.max(y, minY), maxY)}px`;
+    }
+    if (boardChatResizing) {
+      const panel = document.getElementById('boardChatPanel');
+      const width = Math.max(320, boardChatStartSize.w + (event.clientX - boardChatStartSize.x));
+      const height = Math.max(300, boardChatStartSize.h + (event.clientY - boardChatStartSize.y));
+      panel.style.width = `${Math.min(width, window.innerWidth - 40)}px`;
+      panel.style.height = `${Math.min(height, window.innerHeight - 40)}px`;
+    }
+  }
+
+  function stopBoardChatPointer() {
+    boardChatDragging = false;
+    boardChatResizing = false;
   }
 
   function updateStats() {
-    document.getElementById('statsBar').innerHTML = `
-      <span>Всего задач: <strong>${allTasks.length}</strong></span>
-      <span>Колонок: <strong>${allColumns.length}</strong></span>
-    `;
+    document.getElementById('statsBar').innerHTML = `<span>Всего задач: <strong>${allTasks.length}</strong></span><span>Колонок: <strong>${allColumns.length}</strong></span>`;
   }
 
-  async function saveSystemName() {
-    const name = document.getElementById('systemNameInput').value.trim();
-    if (!name) return;
-    await fetch(`${API}/board-settings/update_settings/`, {
-      method: 'PATCH', headers: authHeaders(),
-      body: JSON.stringify({ system_name: name })
-    });
-    document.getElementById('systemName').textContent = name;
-    document.getElementById('loginTitle').textContent = name;
-    document.title = name;
-  }
-
-  // ══════════════════════════════
-  //           ЗАДАЧИ
-  // ══════════════════════════════
+  // ══════════════════════════════════════
+  //               ЗАДАЧИ
+  // ══════════════════════════════════════
 
   function openAddTask(columnId) {
-    currentColumnId = columnId; editingTaskId = null;
+    currentColumnId = columnId; editingTaskId = null; selectedAssignees = [];
     document.getElementById('taskModalTitle').textContent = 'Новая задача';
     document.getElementById('taskTitle').value = '';
     document.getElementById('taskComment').value = '';
     document.getElementById('taskDeadline').value = '';
     document.getElementById('taskPriority').value = 'medium';
     document.getElementById('taskChiefGoal').checked = false;
+    document.getElementById('commentsList').innerHTML = '';
+    document.getElementById('commentInput').value = '';
+    renderAssigneesList();
+    fillAssigneeSelect();
+    switchTab('details');
     document.getElementById('taskModal').classList.add('active');
   }
 
@@ -901,654 +1029,832 @@ document.getElementById('btnOrgChart').style.display = canSeeOrgChart ? 'block' 
     const task = allTasks.find(t => t.id === taskId);
     if (!task) return;
     editingTaskId = taskId; currentColumnId = task.column;
+    selectedAssignees = (task.assigned_to||[]).map(u => ({id:u.id, name:u.full_name||u.username}));
     document.getElementById('taskModalTitle').textContent = 'Редактировать задачу';
     document.getElementById('taskTitle').value = task.title;
-    document.getElementById('taskComment').value = task.comment || '';
-    document.getElementById('taskDeadline').value = task.deadline || '';
-    document.getElementById('taskPriority').value = task.priority || 'medium';
-    document.getElementById('taskChiefGoal').checked = task.is_chief_goal || false;
+    document.getElementById('taskComment').value = task.comment||'';
+    document.getElementById('taskDeadline').value = task.deadline||'';
+    document.getElementById('taskPriority').value = task.priority||'medium';
+    document.getElementById('taskChiefGoal').checked = task.is_chief_goal||false;
+    renderAssigneesList();
+    fillAssigneeSelect();
+    loadComments(taskId);
+    switchTab('details');
     document.getElementById('taskModal').classList.add('active');
   }
 
   function closeTaskModal() {
     document.getElementById('taskModal').classList.remove('active');
-    editingTaskId = null;
+    editingTaskId = null; selectedAssignees = [];
   }
 
-  async function saveTask() {
+  function switchTab(name) {
+    document.querySelectorAll('.task-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.task-tab-content').forEach(t => t.classList.remove('active'));
+    const map = {details:'tabDetails', assignees:'tabAssigneesContent', comments:'tabCommentsContent'};
+    document.getElementById(map[name])?.classList.add('active');
+    document.querySelectorAll('.task-tab').forEach(t => { if (t.getAttribute('onclick')?.includes(name)) t.classList.add('active'); });
+    if (name === 'comments' && editingTaskId) loadComments(editingTaskId);
+  }
+
+async function saveTask() {
     const title = document.getElementById('taskTitle').value.trim();
-    if (!title) return;
+    if (!title) {
+        showNotification('Введите название задачи', 'error');
+        return;
+    }
     const payload = {
-      title,
-      comment: document.getElementById('taskComment').value.trim(),
-      priority: document.getElementById('taskPriority').value,
-      column: currentColumnId,
-      is_chief_goal: document.getElementById('taskChiefGoal').checked,
+        title,
+        comment: document.getElementById('taskComment').value.trim(),
+        priority: document.getElementById('taskPriority').value,
+        column: currentColumnId,
+        is_chief_goal: document.getElementById('taskChiefGoal').checked,
+        assigned_to_ids: selectedAssignees.map(a => a.id)
     };
     const deadline = document.getElementById('taskDeadline').value;
     if (deadline) payload.deadline = deadline;
-
+    
+    console.log('Sending payload:', payload);
+    console.log('currentBoardId:', currentBoardId);
+    console.log('editingTaskId:', editingTaskId);
+    
     const url = editingTaskId ? `${API}/tasks/${editingTaskId}/` : `${API}/tasks/`;
     const method = editingTaskId ? 'PATCH' : 'POST';
-    await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(payload) });
-    closeTaskModal();
+    
+    try {
+        const res = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(payload) });
+        const data = await res.json();
+        console.log('Response status:', res.status);
+        console.log('Response data:', data);
+        
+        if (res.ok) {
+            closeTaskModal();
+            if (!editingTaskId) {
+                // Для новой задачи добавляем её в allTasks вручную, чтобы сразу отобразить
+                data.column = currentColumnId;
+                data.assigned_to = selectedAssignees;
+                allTasks.push(data);
+                renderBoard(allColumns, allTasks);
+                updateStats();
+            } else {
+                loadBoard();
+            }
+            showNotification(editingTaskId ? '✅ Задача обновлена' : '✅ Задача создана', 'success');
+        } else {
+            showNotification(`❌ Ошибка: ${data.detail || data.error || JSON.stringify(data)}`, 'error');
+        }
+    } catch(e) {
+        console.error('Fetch error:', e);
+        showNotification('❌ Ошибка сети', 'error');
+    }
+    console.log('loadBoard called');
+}
+
+  async function archiveTask(taskId) {
+    await fetch(`${API}/tasks/${taskId}/archive/`, {method:'POST', headers: authHeaders()});
+    loadBoard(); showNotification('📦 Задача в архиве', 'info');
+  }
+
+  // ══════════════════════════════════════
+  //            ИСПОЛНИТЕЛИ
+  // ══════════════════════════════════════
+
+  function fillAssigneeSelect() {
+    const select = document.getElementById('assigneeSelect');
+    select.innerHTML = '<option value="">Выбрать пользователя...</option>';
+    allUsers.filter(u => u.id !== currentUser?.id && !selectedAssignees.find(a => a.id === u.id))
+      .forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.id; opt.textContent = u.full_name || u.username;
+        select.appendChild(opt);
+      });
+  }
+
+  function addAssignee(userId) {
+    if (!userId) return;
+    const user = allUsers.find(u => u.id === parseInt(userId));
+    if (!user || selectedAssignees.find(a => a.id === user.id)) return;
+    selectedAssignees.push({id: user.id, name: user.full_name || user.username});
+    renderAssigneesList(); fillAssigneeSelect();
+    document.getElementById('assigneeSelect').value = '';
+  }
+
+  function removeAssignee(userId) {
+    selectedAssignees = selectedAssignees.filter(a => a.id !== userId);
+    renderAssigneesList(); fillAssigneeSelect();
+  }
+
+  function renderAssigneesList() {
+    document.getElementById('assigneesList').innerHTML = selectedAssignees.map(a =>
+      `<div class="assignee-chip">${escHtml(a.name)}<button onclick="removeAssignee(${a.id})">×</button></div>`
+    ).join('');
+  }
+
+  function renderCommentItem(comment, depth = 0) {
+    const indent = depth * 16;
+    const safeAuthorName = escJs(comment.author_name);
+    const safeCommentText = escJs(comment.text);
+    const text = escHtml(comment.text).replace(/@(\w+)/g, '<span class="comment-mention">@$1</span>');
+    const replyBtn = `<button class="task-action-btn" style="font-size:11px;" onclick="setReplyTo(${comment.id}, '${safeAuthorName}', '${safeCommentText}')">Ответить</button>`;
+    const replyToText = comment.reply_to_text || '';
+    const replyNotice = comment.parent ? `<div class="comment-reply-notice">В ответ <b>${escHtml(comment.reply_to_author_name)}</b>: "${escHtml(replyToText).slice(0, 50)}${replyToText.length > 50 ? '...' : ''}"</div>` : '';
+    const children = (Array.isArray(comment.replies) ? comment.replies : []).map(child => renderCommentItem(child, depth + 1)).join('');
+    return `
+      <div class="comment-item" style="margin-left:${indent}px;">
+        ${replyNotice}
+        <div class="comment-header"><span class="comment-author">${escHtml(comment.author_name)}</span><span class="comment-date">${new Date(comment.created_at).toLocaleString('ru')}</span></div>
+        <div class="comment-text">${text}</div>
+        <div style="display:flex;justify-content:flex-end;margin-top:6px;">${replyBtn}</div>
+      </div>
+      ${children}
+    `;
+  }
+
+  function setReplyTo(commentId, authorName, text) {
+    replyToCommentId = commentId;
+    const input = document.getElementById('commentInput');
+    input.placeholder = `Ответ ${authorName}:`;
+    // Показать notice
+    let notice = document.getElementById('commentReplyNotice');
+    if (!notice) {
+      notice = document.createElement('div');
+      notice.id = 'commentReplyNotice';
+      notice.className = 'comment-reply-notice';
+      document.getElementById('commentInput').parentNode.insertBefore(notice, document.getElementById('commentInput'));
+    }
+    notice.innerHTML = `Ответ <b>${escHtml(authorName)}</b>: "${escHtml(text).slice(0, 50)}${text.length > 50 ? '...' : ''}" <button onclick="clearReplyTo()" style="margin-left:8px;font-size:12px;">✕</button>`;
+    notice.style.display = 'block';
+    input.focus();
+  }
+
+  function clearReplyTo() {
+    replyToCommentId = null;
+    document.getElementById('commentInput').placeholder = 'Написать комментарий... Используйте @ для упоминания';
+    const notice = document.getElementById('commentReplyNotice');
+    if (notice) notice.style.display = 'none';
+  }
+
+  // ══════════════════════════════════════
+  //            КОММЕНТАРИИ
+  // ══════════════════════════════════════
+
+  async function loadComments(taskId) {
+    const res = await fetch(`${API}/comments/?task=${taskId}`, {headers: authHeaders()});
+    const data = await res.json();
+    const comments = data.results || data;
+    const list = document.getElementById('commentsList');
+    if (!comments.length) {
+      list.innerHTML = '<div style="color:#888780;font-size:13px;padding:8px 0;">Комментариев пока нет</div>'; return;
+    }
+    const rootComments = (comments || []).filter(c => !c.parent);
+    list.innerHTML = rootComments.map(c => renderCommentItem(c)).join('');
+    list.scrollTop = list.scrollHeight;
+  }
+
+  function handleCommentInput(textarea) {
+    const text = textarea.value; const pos = textarea.selectionStart;
+    const lastAt = text.lastIndexOf('@', pos-1);
+    if (lastAt >= 0 && (lastAt === 0 || text[lastAt-1] === ' ')) {
+      const query = text.slice(lastAt+1, pos).toLowerCase();
+      mentionSearching = true; mentionStart = lastAt;
+      showMentionDropdown(query);
+    } else { mentionSearching = false; hideMentionDropdown(); }
+  }
+
+  function showMentionDropdown(query) {
+    const dropdown = document.getElementById('mentionDropdown');
+    const filtered = allUsers.filter(u => (u.full_name||u.username).toLowerCase().includes(query));
+    if (!filtered.length) { hideMentionDropdown(); return; }
+    dropdown.innerHTML = filtered.map(u => `<div class="mention-option" onclick="insertMention('${escHtml(u.full_name||u.username)}', ${u.id})">${escHtml(u.full_name||u.username)}</div>`).join('');
+    dropdown.classList.add('visible');
+  }
+
+  function hideMentionDropdown() { document.getElementById('mentionDropdown').classList.remove('visible'); }
+
+  function insertMention(name, userId) {
+    const textarea = document.getElementById('commentInput');
+    const text = textarea.value; const pos = textarea.selectionStart;
+    textarea.value = text.slice(0, mentionStart) + `@${name} ` + text.slice(pos);
+    hideMentionDropdown(); mentionSearching = false;
+    textarea.focus();
+  }
+
+  async function sendComment() {
+    const text = document.getElementById('commentInput').value.trim();
+    if (!text || !editingTaskId) return;
+    const mentions = [...text.matchAll(/@([\w\s]+?)(?=\s|$)/g)];
+    const mentionedIds = [];
+    mentions.forEach(m => {
+      const name = m[1].trim();
+      const user = allUsers.find(u => (u.full_name||u.username).toLowerCase() === name.toLowerCase());
+      if (user) mentionedIds.push(user.id);
+    });
+    const payload = {task: editingTaskId, text, mentioned_user_ids: mentionedIds};
+    if (replyToCommentId) payload.parent_id = replyToCommentId;
+    await fetch(`${API}/comments/`, {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify(payload)
+    });
+    document.getElementById('commentInput').value = '';
+    clearReplyTo();
+    loadComments(editingTaskId);
     loadBoard();
   }
 
-  async function archiveTask(taskId) {
+  // ══════════════════════════════════════
+  //            УВЕДОМЛЕНИЯ
+  // ══════════════════════════════════════
+
+  async function loadUnreadCount() {
     try {
-      const response = await fetch(`${API}/tasks/${taskId}/`, {
-        method: 'PATCH',
-        headers: authHeaders(),
-        body: JSON.stringify({ is_archived: true })
-      });
-      
-      if (!response.ok) {
-        const res2 = await fetch(`${API}/tasks/${taskId}/archive/`, {
-          method: 'POST',
-          headers: authHeaders()
-        });
-        if (!res2.ok) throw new Error('Не удалось архивировать');
-      }
-      
-      await loadBoard();
-      showNotification('📦 Задача отправлена в архив', 'success');
-    } catch (error) {
-      console.error('Ошибка архивации:', error);
-      showNotification('❌ Не удалось архивировать задачу', 'error');
-    }
+      const res = await fetch(`${API}/notifications/unread_count/`, {headers: authHeaders()});
+      const data = await res.json();
+      const badge = document.getElementById('notifBadge');
+      if (data.count > 0) { badge.textContent = data.count; badge.classList.add('visible'); }
+      else { badge.classList.remove('visible'); }
+    } catch(e) {}
   }
 
-  // ══════════════════════════════
-  //           АРХИВ
-  // ══════════════════════════════
+  async function toggleNotifications() {
+    const panel = document.getElementById('notifPanel');
+    panel.classList.toggle('open');
+    if (!panel.classList.contains('open')) return;
+    const boardParam = currentBoardId ? `?board=${currentBoardId}` : '';
+    const res = await fetch(`${API}/notifications/${boardParam}`, { headers: authHeaders() });
+    const data = await res.json();
+    const notifs = data.results || data;
+    const list = document.getElementById('notifList');
+    if (!notifs.length) { list.innerHTML = '<div style="padding:24px;color:#888780;font-size:14px;">Нет уведомлений</div>'; return; }
+    list.innerHTML = notifs.map(n => `
+      <div class="notif-item ${n.is_read?'':'unread'}" onclick="markRead(${n.id})">
+        <div class="notif-text">${escHtml(n.text)}</div>
+        <div class="notif-meta">${new Date(n.created_at).toLocaleString('ru')}${n.task_title?` · ${escHtml(n.task_title)}`:''}</div>
+      </div>`).join('');
+    loadUnreadCount();
+  }
+
+  async function markRead(id) {
+    await fetch(`${API}/notifications/${id}/mark_read/`, {method:'POST', headers: authHeaders()});
+    loadUnreadCount();
+  }
+
+  async function markAllRead() {
+    await fetch(`${API}/notifications/mark_all_read/`, {method:'POST', headers: authHeaders()});
+    document.querySelectorAll('.notif-item').forEach(el => el.classList.remove('unread'));
+    loadUnreadCount();
+  }
+
+  // ══════════════════════════════════════
+  //               АРХИВ
+  // ══════════════════════════════════════
 
   async function toggleArchive() {
     const panel = document.getElementById('archivePanel');
     panel.classList.toggle('open');
-    if (panel.classList.contains('open')) {
-      await loadArchive();
-    }
+    if (panel.classList.contains('open')) await loadArchive();
   }
 
   async function loadArchive() {
-    try {
-      const res = await fetch(`${API}/tasks/?archived=true`, { headers: authHeaders() });
-      if (!res.ok) throw new Error('Ошибка загрузки архива');
-      const data = await res.json();
-      const tasks = (data.results || data).filter(t => t.is_archived === true);
-      const list = document.getElementById('archiveList');
-      
-      if (!tasks.length) {
-        list.innerHTML = '<div style="padding:24px;color:#888780;font-size:14px;text-align:center;">📭 Архив пуст</div>';
-        return;
-      }
-      
-      list.innerHTML = tasks.map(t => `
-        <div class="archive-item" data-task-id="${t.id}">
-          <div class="archive-item-title">📌 ${escHtml(t.title)}</div>
-          <div class="archive-item-meta">
-            👤 ${escHtml(t.created_by_name || 'Неизвестный')} · 
-            📅 ${new Date(t.created_at).toLocaleDateString('ru')}
-            ${t.deadline ? ` · ⏰ Дедлайн: ${new Date(t.deadline).toLocaleDateString('ru')}` : ''}
-          </div>
-          <div class="archive-actions">
-            <button class="btn-unarchive" data-id="${t.id}">↩ Восстановить</button>
-            <button class="btn-delete-archive" data-id="${t.id}">🗑 Удалить навсегда</button>
-          </div>
+    const res = await fetch(`${API}/tasks/?archived=true`, {headers: authHeaders()});
+    const data = await res.json();
+    const tasks = (data.results||data).filter(t => t.is_archived===true);
+    const list = document.getElementById('archiveList');
+    if (!tasks.length) { list.innerHTML = '<div style="padding:24px;color:#888780;font-size:14px;text-align:center;">📭 Архив пуст</div>'; return; }
+    list.innerHTML = tasks.map(t => `
+      <div class="archive-item">
+        <div class="archive-item-title">${escHtml(t.title)}</div>
+        <div class="archive-item-meta">${escHtml(t.created_by_name||'')} · ${new Date(t.created_at).toLocaleDateString('ru')}</div>
+        <div class="archive-actions">
+          <button class="btn-unarchive" data-id="${t.id}">↩ Восстановить</button>
+          <button class="btn-delete-archive" data-id="${t.id}">🗑 Удалить</button>
         </div>
-      `).join('');
-      
-      document.querySelectorAll('.btn-unarchive').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          unarchiveTask(parseInt(btn.dataset.id));
-        });
-      });
-      
-      document.querySelectorAll('.btn-delete-archive').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          deleteTask(parseInt(btn.dataset.id));
-        });
-      });
-    } catch (error) {
-      console.error('Ошибка загрузки архива:', error);
-      document.getElementById('archiveList').innerHTML = '<div style="padding:24px;color:#E24B4A;font-size:14px;">❌ Ошибка загрузки архива</div>';
-    }
+      </div>`).join('');
+    document.querySelectorAll('.btn-unarchive').forEach(btn => btn.addEventListener('click', e => { e.stopPropagation(); unarchiveTask(parseInt(btn.dataset.id)); }));
+    document.querySelectorAll('.btn-delete-archive').forEach(btn => btn.addEventListener('click', e => { e.stopPropagation(); deleteTask(parseInt(btn.dataset.id)); }));
   }
 
   async function unarchiveTask(taskId) {
-    try {
-      const res = await fetch(`${API}/tasks/${taskId}/unarchive/`, {
-        method: 'POST',
-        headers: authHeaders()
-      });
-      if (!res.ok) throw new Error('Не удалось восстановить');
-      await loadBoard();
-      await loadArchive();
-      showNotification('✅ Задача восстановлена', 'success');
-    } catch (error) {
-      console.error('Ошибка восстановления:', error);
-      showNotification('❌ Не удалось восстановить задачу', 'error');
-    }
+    const res = await fetch(`${API}/tasks/${taskId}/unarchive/`, {method:'POST', headers: authHeaders()});
+    if (!res.ok) { showNotification('❌ Ошибка восстановления', 'error'); return; }
+    await loadBoard(); await loadArchive(); showNotification('✅ Задача восстановлена', 'success');
   }
 
   async function deleteTask(taskId) {
-    if (!confirm('⚠️ Задача будет удалена навсегда!')) return;
-    try {
-      const res = await fetch(`${API}/tasks/${taskId}/`, {
-        method: 'DELETE',
-        headers: authHeaders()
-      });
-      if (!res.ok) throw new Error('Не удалось удалить');
-      await loadArchive();
-      await loadBoard();
-      showNotification('🗑 Задача удалена', 'info');
-    } catch (error) {
-      console.error('Ошибка удаления:', error);
-      showNotification('❌ Не удалось удалить задачу', 'error');
+    if (!confirm('Удалить задачу навсегда?')) return;
+    const res = await fetch(`${API}/tasks/${taskId}/`, {method:'DELETE', headers: authHeaders()});
+    if (!res.ok) { showNotification('❌ Ошибка удаления', 'error'); return; }
+    await loadArchive(); await loadBoard(); showNotification('🗑 Задача удалена', 'info');
+  }
+
+  // ══════════════════════════════════════
+  //              КОЛОНКИ
+  // ══════════════════════════════════════
+
+function openAddColumn() {
+    if (!currentBoardId) {
+        showNotification('Сначала выберите доску', 'error');
+        return;
     }
-  }
-
-  function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.textContent = message;
-    notification.style.cssText = `
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      padding: 12px 24px;
-      background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#E24B4A' : '#444441'};
-      color: white;
-      border-radius: 10px;
-      font-size: 14px;
-      z-index: 10000;
-      animation: slideIn 0.3s ease;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      font-weight: 500;
-    `;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-      notification.style.animation = 'slideOut 0.3s ease';
-      setTimeout(() => notification.remove(), 300);
-    }, 3000);
-  }
-
-  // ══════════════════════════════
-  //           КОЛОНКИ
-  // ══════════════════════════════
-
-  function openAddColumn() {
     editingColumnId = null;
     document.getElementById('columnModalTitle').textContent = 'Новая колонка';
     document.getElementById('columnName').value = '';
     document.getElementById('columnColor').value = '#E8E2D8';
     document.getElementById('columnModal').classList.add('active');
-  }
+}
 
-  function openEditColumn(id, name, color) {
+function openEditColumn(id, name, color) {
+    if (!currentBoardId) {
+        showNotification('Сначала выберите доску', 'error');
+        return;
+    }
     editingColumnId = id;
     document.getElementById('columnModalTitle').textContent = 'Редактировать колонку';
     document.getElementById('columnName').value = name;
     document.getElementById('columnColor').value = color || '#E8E2D8';
     document.getElementById('columnModal').classList.add('active');
-  }
+}
 
-  function closeColumnModal() {
-    document.getElementById('columnModal').classList.remove('active');
-    editingColumnId = null;
-  }
+  function closeColumnModal() { document.getElementById('columnModal').classList.remove('active'); editingColumnId = null; }
 
-  async function saveColumn() {
+async function saveColumn() {
     const name = document.getElementById('columnName').value.trim();
     const color = document.getElementById('columnColor').value;
     if (!name) return;
+    if (!currentBoardId) {
+        showNotification('Сначала выберите доску', 'error');
+        closeColumnModal();
+        return;
+    }
+    const payload = { name, color, order: allColumns.length, board: currentBoardId };
     if (editingColumnId) {
-      await fetch(`${API}/columns/${editingColumnId}/`, {
-        method: 'PATCH', headers: authHeaders(), body: JSON.stringify({ name, color })
-      });
+        await fetch(`${API}/columns/${editingColumnId}/`, { method: 'PATCH', headers: authHeaders(), body: JSON.stringify(payload) });
     } else {
-      await fetch(`${API}/columns/`, {
-        method: 'POST', headers: authHeaders(),
-        body: JSON.stringify({ name, color, order: allColumns.length })
-      });
+        await fetch(`${API}/columns/`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(payload) });
     }
     closeColumnModal();
     loadBoard();
-  }
+}
 
   async function deleteColumn(colId) {
     if (!confirm('Удалить колонку? Все задачи в ней тоже будут удалены.')) return;
-    await fetch(`${API}/columns/${colId}/`, { method: 'DELETE', headers: authHeaders() });
+    await fetch(`${API}/columns/${colId}/`, {method:'DELETE', headers: authHeaders()});
     loadBoard();
   }
 
-  // ══════════════════════════════
-  //       СТАТИСТИКА
-  // ══════════════════════════════
+  // ══════════════════════════════════════
+  //             СТАТИСТИКА
+  // ══════════════════════════════════════
 
 async function openStats() {
     document.getElementById('dashboardModal').classList.add('active');
     try {
-      const res = await fetch(`${API}/tasks/dashboard/`, { headers: authHeaders() });
-      const d = await res.json();
-      renderDashboard(d);
+        const boardParam = currentBoardId ? `?board=${currentBoardId}` : '';
+        const res = await fetch(`${API}/tasks/dashboard/${boardParam}`, { headers: authHeaders() });
+        const d = await res.json();
+        renderDashboard(d);
     } catch(e) { console.error(e); }
-  }
+}
 
-  function closeDashboard() {
-    document.getElementById('dashboardModal').classList.remove('active');
-  }
-
+  function closeDashboard() { document.getElementById('dashboardModal').classList.remove('active'); }
   function closeStats() { closeDashboard(); }
 
   function renderDashboard(d) {
-    // Карточки
     document.getElementById('dashCards').innerHTML = `
-      <div class="dash-card">
-        <div class="dash-card-value">${d.total}</div>
-        <div class="dash-card-label">Всего задач</div>
-      </div>
-      <div class="dash-card">
-        <div class="dash-card-value" style="color:#A32D2D;">${d.overdue}</div>
-        <div class="dash-card-label">Просрочено</div>
-      </div>
-      <div class="dash-card">
-        <div class="dash-card-value" style="color:#E24B4A;">${d.chief_goals}</div>
-        <div class="dash-card-label">В целях ГС</div>
-      </div>
-      <div class="dash-card">
-        <div class="dash-card-value" style="color:#888780;">${d.archived}</div>
-        <div class="dash-card-label">В архиве</div>
-      </div>
-    `;
-
-    // График активности
-    const maxActivity = Math.max(...d.activity.map(a => a.count), 1);
-    const chartEl = document.getElementById('activityChart');
-    const labelsEl = document.getElementById('activityLabels');
-    chartEl.innerHTML = '';
-    labelsEl.innerHTML = '';
+      <div class="dash-card"><div class="dash-card-value">${d.total}</div><div class="dash-card-label">Всего задач</div></div>
+      <div class="dash-card"><div class="dash-card-value" style="color:#A32D2D;">${d.overdue}</div><div class="dash-card-label">Просрочено</div></div>
+      <div class="dash-card"><div class="dash-card-value" style="color:#E24B4A;">${d.chief_goals}</div><div class="dash-card-label">В целях ГС</div></div>
+      <div class="dash-card"><div class="dash-card-value" style="color:#888780;">${d.archived}</div><div class="dash-card-label">В архиве</div></div>`;
+    const maxA = Math.max(...d.activity.map(a=>a.count),1);
+    const chartEl = document.getElementById('activityChart'); const labelsEl = document.getElementById('activityLabels');
+    chartEl.innerHTML = ''; labelsEl.innerHTML = '';
     d.activity.forEach(a => {
-      const height = Math.max((a.count / maxActivity) * 80, a.count > 0 ? 8 : 2);
-      const bar = document.createElement('div');
-      bar.className = 'activity-bar';
-      bar.style.height = height + 'px';
-      bar.title = `${a.date}: ${a.count} задач`;
-      chartEl.appendChild(bar);
-
-      const label = document.createElement('div');
-      label.className = 'activity-label';
-      const date = new Date(a.date);
-      label.textContent = `${date.getDate()}.${String(date.getMonth()+1).padStart(2,'0')}`;
-      labelsEl.appendChild(label);
+      const h = Math.max((a.count/maxA)*80, a.count>0?8:2);
+      const bar = document.createElement('div'); bar.className='activity-bar'; bar.style.height=h+'px'; bar.title=`${a.date}: ${a.count}`; chartEl.appendChild(bar);
+      const lbl = document.createElement('div'); lbl.className='activity-label'; const dt=new Date(a.date); lbl.textContent=`${dt.getDate()}.${String(dt.getMonth()+1).padStart(2,'0')}`; labelsEl.appendChild(lbl);
     });
-
-    // По колонкам
-    const maxCol = Math.max(...d.by_column.map(c => c.count), 1);
-    document.getElementById('dashColumns').innerHTML = d.by_column.map(c => `
-      <div class="dash-bar-row">
-        <span class="dash-bar-label">${c.column__name}</span>
-        <div class="dash-bar-track">
-          <div class="dash-bar-fill" style="width:${(c.count/maxCol)*100}%"></div>
-        </div>
-        <span class="dash-bar-count">${c.count}</span>
-      </div>
-    `).join('');
-
-    // По приоритетам
-    const priorityColors = { high: '#E24B4A', medium: '#EF9F27', low: '#639922' };
-    const priorityNames = { high: '🔴 Высокий', medium: '🟡 Средний', low: '🟢 Низкий' };
-    document.getElementById('dashPriorities').innerHTML = d.by_priority.map(p => `
-      <div class="priority-badge" style="background:${priorityColors[p.priority]}22;border:1px solid ${priorityColors[p.priority]}44;">
-        <span style="color:${priorityColors[p.priority]};font-weight:600;">${priorityNames[p.priority]||p.priority}</span>
-        <span style="font-size:16px;font-weight:700;color:#2C2C2A;">${p.count}</span>
-      </div>
-    `).join('');
-
-    // По пользователям
-    if (d.by_user && d.by_user.length > 0) {
-      const usersSection = document.getElementById('dashUsersSection');
-      usersSection.style.display = 'block';
-      const maxUser = Math.max(...d.by_user.map(u => u.count), 1);
-      document.getElementById('dashUsers').innerHTML = d.by_user.map(u => {
-        const name = [u.created_by__first_name, u.created_by__last_name].filter(Boolean).join(' ') || u.created_by__username;
-        return `
-          <div class="dash-bar-row">
-            <span class="dash-bar-label">${name}</span>
-            <div class="dash-bar-track">
-              <div class="dash-bar-fill" style="width:${(u.count/maxUser)*100}%;background:#9B8FD4;"></div>
-            </div>
-            <span class="dash-bar-count">${u.count}</span>
-          </div>
-        `;
-      }).join('');
+    const maxC = Math.max(...d.by_column.map(c=>c.count),1);
+    document.getElementById('dashColumns').innerHTML = d.by_column.map(c=>`<div class="dash-bar-row"><span class="dash-bar-label">${c.column__name}</span><div class="dash-bar-track"><div class="dash-bar-fill" style="width:${(c.count/maxC)*100}%"></div></div><span class="dash-bar-count">${c.count}</span></div>`).join('');
+    const pc={high:'#E24B4A',medium:'#EF9F27',low:'#639922'}; const pn={high:'🔴 Высокий',medium:'🟡 Средний',low:'🟢 Низкий'};
+    document.getElementById('dashPriorities').innerHTML = d.by_priority.map(p=>`<div class="priority-badge" style="background:${pc[p.priority]}22;border:1px solid ${pc[p.priority]}44;"><span style="color:${pc[p.priority]};font-weight:600;">${pn[p.priority]||p.priority}</span><span style="font-size:16px;font-weight:700;">${p.count}</span></div>`).join('');
+    if (d.by_user?.length) {
+      document.getElementById('dashUsersSection').style.display='block';
+      const maxU=Math.max(...d.by_user.map(u=>u.count),1);
+      document.getElementById('dashUsers').innerHTML = d.by_user.map(u=>{const n=[u.created_by__first_name,u.created_by__last_name].filter(Boolean).join(' ')||u.created_by__username;return`<div class="dash-bar-row"><span class="dash-bar-label">${n}</span><div class="dash-bar-track"><div class="dash-bar-fill" style="width:${(u.count/maxU)*100}%;background:#9B8FD4;"></div></div><span class="dash-bar-count">${u.count}</span></div>`;}).join('');
     }
   }
 
-  function closeStats() {
-    document.getElementById('dashboardModal').classList.add('active');
-  }
-
-  // ══════════════════════════════
-  //       ПОЛЬЗОВАТЕЛИ
-  // ══════════════════════════════
+  // ══════════════════════════════════════
+  //            ПОЛЬЗОВАТЕЛИ
+  // ══════════════════════════════════════
 
   async function toggleUsers() {
     const panel = document.getElementById('usersPanel');
     panel.classList.toggle('open');
     if (!panel.classList.contains('open')) return;
-    const res = await fetch(`${API}/users/`, { headers: authHeaders() });
-    const data = await res.json();
-    const users = data.results || data;
-    const roles = { admin:'Admin', chief:'Главный специалист', lead:'Ведущий специалист', specialist:'Специалист', junior:'Младший специалист' };
+    const res = await fetch(`${API}/users/`, {headers: authHeaders()});
+    const data = await res.json(); const users = data.results||data;
+    const roles = {lead:'Ведущий специалист',specialist:'Специалист',senior:'Старший специалист',junior:'Младший специалист'};
     document.getElementById('usersList').innerHTML = users.map(u => {
-      const initials = ((u.first_name||'')[0]||(u.username||'')[0]||'?').toUpperCase() + ((u.last_name||'')[0]||'').toUpperCase();
-      return `
-        <div class="user-card">
-          <div class="user-avatar">${initials}</div>
-          <div class="user-info">
-            <div class="user-name">${u.full_name || u.username}</div>
-            <div class="user-meta">${roles[u.role]||u.role}${u.telegram_username ? ' · @'+u.telegram_username : ''}</div>
-          </div>
-          ${canChangeRoles() && ROLE_HIERARCHY[currentUser?.role] > ROLE_HIERARCHY[u.role] ? `
-            <select class="role-select" onchange="changeRole(${u.id}, this.value)">
-              ${Object.entries(roles).map(([v,l])=>`<option value="${v}"${u.role===v?' selected':''}>${l}</option>`).join('')}
-            </select>
-          ` : `<span style="font-size:12px;color:#888780;">${roles[u.role]||u.role}</span>`}
-        </div>
-      `;
+      const initials = ((u.first_name||'')[0]||(u.username||'')[0]||'?').toUpperCase()+((u.last_name||'')[0]||'').toUpperCase();
+      const canEdit = canChangeRoles() && ROLE_HIERARCHY[currentUser?.role] > ROLE_HIERARCHY[u.role];
+      return `<div class="user-card">
+        <div class="user-avatar">${initials}</div>
+        <div class="user-info"><div class="user-name">${u.full_name||u.username}</div><div class="user-meta">${roles[u.role]||u.role}${u.telegram_username?' · @'+u.telegram_username:''}</div></div>
+        ${canEdit?`<select class="role-select" onchange="changeRole(${u.id},this.value)">${Object.entries(roles).map(([v,l])=>`<option value="${v}"${u.role===v?' selected':''}>${l}</option>`).join('')}</select>`:`<span style="font-size:12px;color:#888780;">${roles[u.role]||u.role}</span>`}
+      </div>`;
     }).join('');
   }
 
   async function changeRole(userId, role) {
-    await fetch(`${API}/users/${userId}/`, {
-      method: 'PATCH', headers: authHeaders(), body: JSON.stringify({ role })
-    });
+    await fetch(`${API}/users/${userId}/`, {method:'PATCH', headers: authHeaders(), body: JSON.stringify({role})});
   }
 
-  // ══════════════════════════════
-  //    DRAG & DROP — ЗАДАЧИ
-  // ══════════════════════════════
+  async function saveSystemName() {
+    const name = document.getElementById('systemNameInput').value.trim();
+    if (!name) return;
+    await fetch(`${API}/board-settings/update_settings/`, {method:'PATCH', headers: authHeaders(), body: JSON.stringify({system_name:name})});
+    document.getElementById('systemName').textContent = name;
+    document.getElementById('loginTitle').textContent = name;
+    document.title = name;
+  }
+
+  // ══════════════════════════════════════
+  //          DRAG & DROP — ЗАДАЧИ
+  // ══════════════════════════════════════
 
   function onDragStart(e) {
     if (draggedColEl) return;
-    draggedCard = e.currentTarget;
-    draggedTaskId = draggedCard.dataset.taskId;
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', draggedTaskId);
-    setTimeout(() => draggedCard?.classList.add('dragging'), 0);
+    draggedCard = e.currentTarget; draggedTaskId = draggedCard.dataset.taskId;
+    e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain', draggedTaskId);
+    setTimeout(()=>draggedCard?.classList.add('dragging'),0);
   }
 
-  function onDragEnd(e) {
-    if (draggedCard) draggedCard.classList.remove('dragging');
-    document.querySelectorAll('.drag-placeholder').forEach(p => p.remove());
-    document.querySelectorAll('.column').forEach(c => c.classList.remove('drag-over'));
-    draggedCard = null; draggedTaskId = null;
+  function onDragEnd() {
+    draggedCard?.classList.remove('dragging');
+    document.querySelectorAll('.drag-placeholder').forEach(p=>p.remove());
+    document.querySelectorAll('.column').forEach(c=>c.classList.remove('drag-over'));
+    draggedCard=null; draggedTaskId=null;
   }
 
   function onDragOver(e) {
-    if (draggedColEl) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    if (draggedColEl) return; e.preventDefault();
     const zone = e.currentTarget;
     zone.closest('.column')?.classList.add('drag-over');
-    document.querySelectorAll('.drag-placeholder').forEach(p => p.remove());
-    const ph = document.createElement('div');
-    ph.className = 'drag-placeholder';
-    const after = getDragAfter(zone, e.clientY);
-    after ? zone.insertBefore(ph, after) : zone.appendChild(ph);
+    document.querySelectorAll('.drag-placeholder').forEach(p=>p.remove());
+    const ph=document.createElement('div'); ph.className='drag-placeholder';
+    const after=getDragAfter(zone,e.clientY);
+    after?zone.insertBefore(ph,after):zone.appendChild(ph);
   }
 
   function onDragLeave(e) {
     if (!e.currentTarget.contains(e.relatedTarget)) {
       e.currentTarget.closest('.column')?.classList.remove('drag-over');
-      document.querySelectorAll('.drag-placeholder').forEach(p => p.remove());
+      document.querySelectorAll('.drag-placeholder').forEach(p=>p.remove());
     }
   }
 
   async function onDrop(e) {
-    if (draggedColEl) return;
-    e.preventDefault();
-    const col = e.currentTarget.closest('.column');
-    const newColId = parseInt(col?.dataset.colId);
-    col?.classList.remove('drag-over');
-    document.querySelectorAll('.drag-placeholder').forEach(p => p.remove());
-    const taskId = draggedTaskId || e.dataTransfer.getData('text/plain');
-    if (!taskId || !newColId) return;
-    await fetch(`${API}/tasks/${taskId}/`, {
-      method: 'PATCH', headers: authHeaders(), body: JSON.stringify({ column: newColId })
-    });
+    if (draggedColEl) return; e.preventDefault();
+    const col=e.currentTarget.closest('.column'); const newColId=parseInt(col?.dataset.colId);
+    col?.classList.remove('drag-over'); document.querySelectorAll('.drag-placeholder').forEach(p=>p.remove());
+    const taskId=draggedTaskId||e.dataTransfer.getData('text/plain');
+    if (!taskId||!newColId) return;
+    await fetch(`${API}/tasks/${taskId}/`, {method:'PATCH', headers: authHeaders(), body: JSON.stringify({column:newColId})});
     loadBoard();
   }
 
   function getDragAfter(zone, y) {
-    return [...zone.querySelectorAll('.task-card:not(.dragging)')].reduce((closest, child) => {
-      const box = child.getBoundingClientRect();
-      const offset = y - box.top - box.height / 2;
-      return offset < 0 && offset > closest.offset ? { offset, element: child } : closest;
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
+    return [...zone.querySelectorAll('.task-card:not(.dragging)')].reduce((closest,child)=>{
+      const box=child.getBoundingClientRect(); const offset=y-box.top-box.height/2;
+      return offset<0&&offset>closest.offset?{offset,element:child}:closest;
+    },{offset:Number.NEGATIVE_INFINITY}).element;
   }
 
-  // ══════════════════════════════
-  //    DRAG & DROP — КОЛОНКИ
-  // ══════════════════════════════
+  // ══════════════════════════════════════
+  //          DRAG & DROP — КОЛОНКИ
+  // ══════════════════════════════════════
 
   function onColDragStart(e) {
-    if (e.target.closest('.task-card') || e.target.closest('.col-btn') || e.target.closest('.btn-add-task')) return;
-    draggedColEl = e.currentTarget;
-    e.dataTransfer.effectAllowed = 'move';
-    setTimeout(() => draggedColEl?.classList.add('col-dragging'), 0);
+    if (!canReorderColumns()) return;
+    if (e.target.closest('.task-card')||e.target.closest('.col-btn')||e.target.closest('.btn-add-task')) return;
+    draggedColEl=e.currentTarget; e.dataTransfer.effectAllowed='move';
+    setTimeout(()=>draggedColEl?.classList.add('col-dragging'),0);
   }
 
-  function onColDragEnd(e) {
-    draggedColEl?.classList.remove('col-dragging');
-    draggedColEl = null;
-  }
+  function onColDragEnd() { draggedColEl?.classList.remove('col-dragging'); draggedColEl=null; }
 
   function onColDragOver(e) {
-    if (!draggedColEl) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    const target = e.currentTarget;
-    if (target === draggedColEl) return;
-    const board = document.getElementById('board');
-    const cols = [...board.querySelectorAll('.column')];
-    const dragRect = draggedColEl.getBoundingClientRect();
-    const targetRect = target.getBoundingClientRect();
-    if (dragRect.left < targetRect.left) board.insertBefore(draggedColEl, target.nextSibling);
-    else board.insertBefore(draggedColEl, target);
+    if (!draggedColEl) return; e.preventDefault();
+    const target=e.currentTarget; if (target===draggedColEl) return;
+    const board=document.getElementById('board');
+    const dragRect=draggedColEl.getBoundingClientRect(); const targetRect=target.getBoundingClientRect();
+    if (dragRect.left<targetRect.left) board.insertBefore(draggedColEl,target.nextSibling);
+    else board.insertBefore(draggedColEl,target);
   }
 
   async function onColDrop(e) {
-    if (!draggedColEl) return;
-    e.preventDefault();
-    const cols = [...document.getElementById('board').querySelectorAll('.column')];
-    const orders = cols.map((c, i) => ({ id: parseInt(c.dataset.colId), order: i }));
-    await fetch(`${API}/columns/reorder/`, {
-      method: 'POST', headers: authHeaders(), body: JSON.stringify({ orders })
-    });
+    if (!draggedColEl) return; e.preventDefault();
+    const cols=[...document.getElementById('board').querySelectorAll('.column')];
+    const orders=cols.map((c,i)=>({id:parseInt(c.dataset.colId),order:i}));
+    await fetch(`${API}/columns/reorder/`, {method:'POST', headers: authHeaders(), body: JSON.stringify({orders})});
     loadBoard();
   }
 
-  // ══════════════════════════════
-  //         НАСТРОЙКИ ТЕМЫ
-  // ══════════════════════════════
+  // ══════════════════════════════════════
+  //           НАСТРОЙКИ ТЕМЫ
+  // ══════════════════════════════════════
 
   const themes = {
-    sand:     { grad: 'linear-gradient(135deg,#F5EDD6,#E8CDA0)', header: '#EDE8DF', card: '#FFFFFF', g1:'#F5EDD6', g2:'#E8CDA0', angle:135 },
-    lavender: { grad: 'linear-gradient(135deg,#EEF0FB,#D8D2F0)', header: '#E4E0F7', card: '#FFFFFF', g1:'#EEF0FB', g2:'#D8D2F0', angle:135 },
-    mint:     { grad: 'linear-gradient(135deg,#E8F5F0,#BFE2D8)', header: '#D4EDE6', card: '#FFFFFF', g1:'#E8F5F0', g2:'#BFE2D8', angle:135 },
-    peach:    { grad: 'linear-gradient(135deg,#FDF0F0,#F5CEBF)', header: '#F9E0D8', card: '#FFF8F5', g1:'#FDF0F0', g2:'#F5CEBF', angle:135 },
-    steel:    { grad: 'linear-gradient(135deg,#EEF2F7,#C8D6E8)', header: '#DDE5F0', card: '#FFFFFF', g1:'#EEF2F7', g2:'#C8D6E8', angle:135 },
-    night:    { grad: 'linear-gradient(135deg,#1A1A2E,#0F3460)', header: '#0F3460', card: '#1E2A45', g1:'#1A1A2E', g2:'#0F3460', angle:135 },
-    beige:    { grad: 'linear-gradient(135deg,#F5F0E8,#E8E2D8)', header: '#EDE8DF', card: '#FFFFFF', g1:'#F5F0E8', g2:'#E8E2D8', angle:135 },
-    blue:     { grad: 'linear-gradient(135deg,#F0F4F8,#DDE8F0)', header: '#E8EEF5', card: '#FFFFFF', g1:'#F0F4F8', g2:'#DDE8F0', angle:135 },
-    rose:     { grad: 'linear-gradient(135deg,#FAF0F0,#F0DEDE)', header: '#F5E8E8', card: '#FFF8F8', g1:'#FAF0F0', g2:'#F0DEDE', angle:135 },
+    sand:     {grad:'linear-gradient(135deg,#F5EDD6,#E8CDA0)',header:'#EDE8DF',card:'#FFFFFF',g1:'#F5EDD6',g2:'#E8CDA0',angle:135},
+    lavender: {grad:'linear-gradient(135deg,#EEF0FB,#D8D2F0)',header:'#E4E0F7',card:'#FFFFFF',g1:'#EEF0FB',g2:'#D8D2F0',angle:135},
+    mint:     {grad:'linear-gradient(135deg,#E8F5F0,#BFE2D8)',header:'#D4EDE6',card:'#FFFFFF',g1:'#E8F5F0',g2:'#BFE2D8',angle:135},
+    peach:    {grad:'linear-gradient(135deg,#FDF0F0,#F5CEBF)',header:'#F9E0D8',card:'#FFF8F5',g1:'#FDF0F0',g2:'#F5CEBF',angle:135},
+    steel:    {grad:'linear-gradient(135deg,#EEF2F7,#C8D6E8)',header:'#DDE5F0',card:'#FFFFFF',g1:'#EEF2F7',g2:'#C8D6E8',angle:135},
+    night:    {grad:'linear-gradient(135deg,#1A1A2E,#0F3460)',header:'#0F3460',card:'#1E2A45',g1:'#1A1A2E',g2:'#0F3460',angle:135},
+    beige:    {grad:'linear-gradient(135deg,#F5F0E8,#E8E2D8)',header:'#EDE8DF',card:'#FFFFFF',g1:'#F5F0E8',g2:'#E8E2D8',angle:135},
+    blue:     {grad:'linear-gradient(135deg,#F0F4F8,#DDE8F0)',header:'#E8EEF5',card:'#FFFFFF',g1:'#F0F4F8',g2:'#DDE8F0',angle:135},
+    rose:     {grad:'linear-gradient(135deg,#FAF0F0,#F0DEDE)',header:'#F5E8E8',card:'#FFF8F8',g1:'#FAF0F0',g2:'#F0DEDE',angle:135},
   };
 
   function toggleSettings() { document.getElementById('settingsPanel').classList.toggle('open'); }
 
   async function applyTheme(name) {
-    const t = themes[name]; 
-    if (!t) return;
-    
-    document.body.style.background = t.grad;
-    document.getElementById('gradColor1').value = t.g1;
-    document.getElementById('gradColor2').value = t.g2;
-    document.getElementById('gradAngle').value = t.angle;
-    document.getElementById('gradAngleVal').textContent = t.angle + '°';
-    document.getElementById('colorHeader').value = t.header;
-    document.getElementById('colorCard').value = t.card;
-    
-    const merged = { ...t };
-    saveTheme(merged);
-    applyColors(merged);
-    
-    document.querySelectorAll('.theme-swatch').forEach(s => s.classList.remove('active'));
+    const t=themes[name]; if (!t) return;
+    document.body.style.background=t.grad;
+    document.getElementById('gradColor1').value=t.g1; document.getElementById('gradColor2').value=t.g2;
+    document.getElementById('gradAngle').value=t.angle; document.getElementById('gradAngleVal').textContent=t.angle+'°';
+    document.getElementById('colorHeader').value=t.header; document.getElementById('colorCard').value=t.card;
+    saveTheme({...t}); applyColors({...t});
+    document.querySelectorAll('.theme-swatch').forEach(s=>s.classList.remove('active'));
     document.querySelector(`[data-theme="${name}"]`)?.classList.add('active');
-    
-    if (canManage()) {
-      await fetch(`${API}/board-settings/update_settings/`, {
-        method: 'PATCH', 
-        headers: authHeaders(),
-        body: JSON.stringify({ 
-          bg_gradient: t.grad,
-          bg_color1: t.g1,
-          bg_color2: t.g2,
-          bg_angle: t.angle,
-          header_color: t.header, 
-          card_color: t.card 
-        })
-      });
-    }
+    if (canManage()) await fetch(`${API}/board-settings/update_settings/`,{method:'PATCH',headers:authHeaders(),body:JSON.stringify({bg_gradient:t.grad,bg_color1:t.g1,bg_color2:t.g2,bg_angle:t.angle,header_color:t.header,card_color:t.card})});
   }
 
   async function applyGradient() {
-    const g1 = document.getElementById('gradColor1').value;
-    const g2 = document.getElementById('gradColor2').value;
-    const angle = document.getElementById('gradAngle').value;
-    const grad = `linear-gradient(${angle}deg,${g1},${g2})`;
-    document.body.style.background = grad;
-    
-    const c = JSON.parse(localStorage.getItem('boardTheme')||'{}');
-    c.grad = grad; 
-    c.g1 = g1; 
-    c.g2 = g2; 
-    c.angle = parseInt(angle);
-    saveTheme(c);
-    document.querySelectorAll('.theme-swatch').forEach(s => s.classList.remove('active'));
-    
-    if (canManage()) {
-      await fetch(`${API}/board-settings/update_settings/`, {
-        method: 'PATCH', 
-        headers: authHeaders(),
-        body: JSON.stringify({ 
-          bg_gradient: grad,
-          bg_color1: g1,
-          bg_color2: g2,
-          bg_angle: parseInt(angle)
-        })
-      });
-    }
+    const g1=document.getElementById('gradColor1').value; const g2=document.getElementById('gradColor2').value; const angle=document.getElementById('gradAngle').value;
+    const grad=`linear-gradient(${angle}deg,${g1},${g2})`;
+    document.body.style.background=grad;
+    const c=JSON.parse(localStorage.getItem('boardTheme')||'{}'); c.grad=grad; c.g1=g1; c.g2=g2; c.angle=parseInt(angle); saveTheme(c);
+    document.querySelectorAll('.theme-swatch').forEach(s=>s.classList.remove('active'));
+    if (canManage()) await fetch(`${API}/board-settings/update_settings/`,{method:'PATCH',headers:authHeaders(),body:JSON.stringify({bg_gradient:grad,bg_color1:g1,bg_color2:g2,bg_angle:parseInt(angle)})});
   }
 
   async function applyCustomColor(type, value) {
-    const c = JSON.parse(localStorage.getItem('boardTheme')||'{}');
-    c[type] = value; 
-    saveTheme(c); 
-    applyColors(c);
-    
-    if (canManage()) {
-      const payload = type === 'header' ? { header_color: value } : { card_color: value };
-      await fetch(`${API}/board-settings/update_settings/`, {
-        method: 'PATCH', 
-        headers: authHeaders(),
-        body: JSON.stringify(payload)
-      });
-    }
+    const c=JSON.parse(localStorage.getItem('boardTheme')||'{}'); c[type]=value; saveTheme(c); applyColors(c);
+    if (canManage()) { const payload=type==='header'?{header_color:value}:{card_color:value}; await fetch(`${API}/board-settings/update_settings/`,{method:'PATCH',headers:authHeaders(),body:JSON.stringify(payload)}); }
   }
 
   async function applyOpacity(type, value) {
-    document.getElementById(`opacity${type}Val`).textContent = value + '%';
-    const c = JSON.parse(localStorage.getItem('boardTheme')||'{}');
-    c[`opacity${type}`] = parseInt(value); 
-    saveTheme(c);
-    renderBoard(allColumns, allTasks);
-    
-    if (canManage()) {
-      await fetch(`${API}/board-settings/update_settings/`, {
-        method: 'PATCH', 
-        headers: authHeaders(),
-        body: JSON.stringify({ [`bg_opacity_${type.toLowerCase()}`]: parseInt(value) })
-      });
-    }
+    document.getElementById(`opacity${type}Val`).textContent=value+'%';
+    const c=JSON.parse(localStorage.getItem('boardTheme')||'{}'); c[`opacity${type}`]=parseInt(value); saveTheme(c); renderBoard(allColumns,allTasks);
+    if (canManage()) await fetch(`${API}/board-settings/update_settings/`,{method:'PATCH',headers:authHeaders(),body:JSON.stringify({[`bg_opacity_${type.toLowerCase()}`]:parseInt(value)})});
   }
 
   function applyColors(t) {
-    if (t.grad) document.body.style.background = t.grad;
-    else if (t.bg) document.body.style.backgroundColor = t.bg;
-    if (t.header) {
-      const op = (t.opacityHeader || 85) / 100;
-      const h = document.querySelector('header');
-      if (h) h.style.background = hexToRgba(t.header, op);
-    }
-    renderBoard(allColumns, allTasks);
+    if (t.grad) document.body.style.background=t.grad;
+    else if (t.bg) document.body.style.backgroundColor=t.bg;
+    if (t.header) { const op=(t.opacityHeader||85)/100; const h=document.querySelector('header'); if (h) h.style.background=hexToRgba(t.header,op); }
+    renderBoard(allColumns,allTasks);
   }
 
-  function saveTheme(c) { localStorage.setItem('boardTheme', JSON.stringify(c)); }
+  function saveTheme(c) { localStorage.setItem('boardTheme',JSON.stringify(c)); }
 
   function loadTheme() {
-    const saved = localStorage.getItem('boardTheme');
-    if (!saved) return;
-    const t = JSON.parse(saved);
-    if (t.grad) document.body.style.background = t.grad;
-    else if (t.bg) document.body.style.backgroundColor = t.bg;
-    if (t.header) {
-      const h = document.querySelector('header');
-      if (h) h.style.background = hexToRgba(t.header, (t.opacityHeader||85)/100);
-    }
-    if (t.g1 && document.getElementById('gradColor1')) document.getElementById('gradColor1').value = t.g1;
-    if (t.g2 && document.getElementById('gradColor2')) document.getElementById('gradColor2').value = t.g2;
-    if (t.angle && document.getElementById('gradAngle')) {
-      document.getElementById('gradAngle').value = t.angle;
-      document.getElementById('gradAngleVal').textContent = t.angle + '°';
-    }
-    if (t.header && document.getElementById('colorHeader')) document.getElementById('colorHeader').value = t.header;
-    if (t.card && document.getElementById('colorCard')) document.getElementById('colorCard').value = t.card;
-    ['Header','Column','Card'].forEach(k => {
-      const el = document.getElementById(`opacity${k}`);
-      const val = t[`opacity${k}`];
-      if (el && val) { el.value = val; document.getElementById(`opacity${k}Val`).textContent = val+'%'; }
-    });
+    const saved=localStorage.getItem('boardTheme'); if (!saved) return;
+    const t=JSON.parse(saved);
+    if (t.grad) document.body.style.background=t.grad; else if (t.bg) document.body.style.backgroundColor=t.bg;
+    if (t.header) { const h=document.querySelector('header'); if (h) h.style.background=hexToRgba(t.header,(t.opacityHeader||85)/100); }
+    if (t.g1&&document.getElementById('gradColor1')) document.getElementById('gradColor1').value=t.g1;
+    if (t.g2&&document.getElementById('gradColor2')) document.getElementById('gradColor2').value=t.g2;
+    if (t.angle&&document.getElementById('gradAngle')) { document.getElementById('gradAngle').value=t.angle; document.getElementById('gradAngleVal').textContent=t.angle+'°'; }
+    if (t.header&&document.getElementById('colorHeader')) document.getElementById('colorHeader').value=t.header;
+    if (t.card&&document.getElementById('colorCard')) document.getElementById('colorCard').value=t.card;
+    ['Header','Column','Card'].forEach(k=>{ const el=document.getElementById(`opacity${k}`); const val=t[`opacity${k}`]; if (el&&val){el.value=val;document.getElementById(`opacity${k}Val`).textContent=val+'%';} });
   }
 
   function resetTheme() { localStorage.removeItem('boardTheme'); applyTheme('beige'); }
 
-  // ══════════════════════════════
-  //         УТИЛИТЫ
-  // ══════════════════════════════
+  // ══════════════════════════════════════
+  //              УТИЛИТЫ
+  // ══════════════════════════════════════
 
   function hexToRgba(hex, op) {
     if (!hex?.startsWith('#')) return hex;
-    const r = parseInt(hex.slice(1,3),16);
-    const g = parseInt(hex.slice(3,5),16);
-    const b = parseInt(hex.slice(5,7),16);
+    const r=parseInt(hex.slice(1,3),16); const g=parseInt(hex.slice(3,5),16); const b=parseInt(hex.slice(5,7),16);
     return `rgba(${r},${g},${b},${op})`;
   }
 
-  function escHtml(str) {
-    return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  function escHtml(str) { return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function escJs(str) { return String(str||'').replace(/\\/g,'\\\\').replace(/'/g, "\\'").replace(/\n/g, ' ').replace(/\r/g, ' '); }
+
+  function showNotification(message, type='info') {
+    const n=document.createElement('div');
+    n.textContent=message;
+    n.style.cssText=`position:fixed;bottom:20px;right:20px;padding:12px 24px;background:${type==='success'?'#4CAF50':type==='error'?'#E24B4A':'#444441'};color:white;border-radius:10px;font-size:14px;z-index:10000;box-shadow:0 4px 12px rgba(0,0,0,0.15);font-weight:500;`;
+    document.body.appendChild(n);
+    setTimeout(()=>n.remove(),3000);
   }
 
-  // ══════════════════════════════
-  //           СТАРТ
-  // ══════════════════════════════
+
+let lastChatOpenTime = null;
+
+async function loadBoardChat() {
+    if (!currentBoardId) return;
+    const list = document.getElementById('boardChatList');
+    try {
+        const res = await fetch(`${API}/board-chat/?board=${currentBoardId}`, { headers: authHeaders() });
+        if (!res.ok) return;
+        const data = await res.json();
+        const messages = data.results || data;
+        chatReplyMap = {};
+        if (!messages.length) {
+            list.innerHTML = '<div style="color:#888780;font-size:13px;">Чат пуст. Напишите первое сообщение.</div>';
+            return;
+        }
+        // Подсчёт новых сообщений, если время последнего открытия сохранено
+        const now = new Date();
+        if (lastChatOpenTime) {
+            const newMessages = messages.filter(m => new Date(m.created_at) > lastChatOpenTime && m.author !== currentUser?.id);
+            const badge = document.getElementById('chatUnreadBadge');
+            if (newMessages.length) {
+                badge.textContent = newMessages.length;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+        // Рендер сообщений без изменений
+        list.innerHTML = '';
+        messages.forEach(m => {
+            chatReplyMap[m.id] = m;
+            const messageEl = document.createElement('div');
+            messageEl.className = 'board-chat-message';
+            messageEl.innerHTML = `
+                <div class="board-chat-author">${escHtml(m.author_name)} · ${new Date(m.created_at).toLocaleTimeString('ru', {hour:'2-digit',minute:'2-digit'})}</div>
+                ${m.reply_to_text ? `<div class="board-chat-reply active"><span>Ответ на ${escHtml(m.reply_to_author_name)}</span><div class="reply-preview">${escHtml(m.reply_to_text)}</div></div>` : ''}
+                <div class="board-chat-text">${escHtml(m.text)}</div>
+                <div class="board-chat-actions"><button class="chat-reply-btn" type="button" onclick="setBoardChatReply(${m.id})">Ответить</button></div>
+            `;
+            list.appendChild(messageEl);
+        });
+        list.scrollTop = list.scrollHeight;
+        // Обновляем время последнего просмотра
+        lastChatOpenTime = now;
+        localStorage.setItem(`chat_last_open_${currentBoardId}`, now.toISOString());
+    } catch(e) { console.error(e); }
+}
+
+// В функции toggleBoardChat при открытии панели загружаем последнее время из localStorage
+function toggleBoardChat() {
+    const panel = document.getElementById('boardChatPanel');
+    const isOpen = panel.classList.toggle('open');
+    if (isOpen) {
+        if (!currentBoardId && allBoards.length) {
+            currentBoardId = allBoards[0].id;
+            localStorage.setItem('currentBoardId', currentBoardId);
+        }
+        const saved = localStorage.getItem(`chat_last_open_${currentBoardId}`);
+        lastChatOpenTime = saved ? new Date(saved) : null;
+        loadBoardChat();
+    }
+}
+
+
+
+// ══════════════════════════════════════
+//          УЧАСТНИКИ ДОСКИ
+// ══════════════════════════════════════
+async function toggleBoardMembers() {
+    const panel = document.getElementById('boardMembersPanel');
+    if (!panel) {
+        console.error('Панель участников не найдена в DOM');
+        return;
+    }
+    const isOpen = panel.classList.toggle('open');
+    if (!isOpen) return;
+
+    if (!currentBoardId) {
+        document.getElementById('boardMembersList').innerHTML = '<div style="padding:24px;color:#888780;">Сначала выберите доску</div>';
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API}/boards/${currentBoardId}/`, { headers: authHeaders() });
+        if (!res.ok) throw new Error();
+        const board = await res.json();
+        const members = board.memberships || [];
+        const rolesMap = { admin: 'Админ', editor: 'Редактор', viewer: 'Зритель' };
+        const canManage = Number(board.creator) === Number(currentUser?.id) || currentUser?.role === 'admin';
+        const list = document.getElementById('boardMembersList');
+        if (!members.length) {
+            list.innerHTML = '<div style="padding:24px;text-align:center;">Нет участников</div>';
+        } else {
+            list.innerHTML = members.map(m => `
+                <div class="user-card">
+                    <div class="user-avatar">${((m.user?.first_name||'')[0]||(m.user?.username||'')[0]||'?').toUpperCase()}${((m.user?.last_name||'')[0]||'').toUpperCase()}</div>
+                    <div class="user-info">
+                        <div class="user-name">${m.user?.full_name || m.user?.username}</div>
+                        <div class="user-meta">Роль: ${rolesMap[m.role]}</div>
+                    </div>
+                    ${canManage ? `<select class="role-select" onchange="changeBoardMemberRole(${board.id}, ${m.user.id}, this.value)">
+                        <option value="admin" ${m.role==='admin' ? 'selected' : ''}>Админ</option>
+                        <option value="editor" ${m.role==='editor' ? 'selected' : ''}>Редактор</option>
+                        <option value="viewer" ${m.role==='viewer' ? 'selected' : ''}>Зритель</option>
+                    </select>` : ''}
+                </div>
+            `).join('');
+        }
+    } catch(e) {
+        console.error(e);
+        document.getElementById('boardMembersList').innerHTML = '<div style="padding:24px;color:#E24B4A;">Ошибка загрузки</div>';
+    }
+}
+
+async function changeBoardMemberRole(boardId, userId, newRole) {
+    try {
+        const res = await fetch(`${API}/boards/${boardId}/update_membership/`, {
+            method: 'PATCH',
+            headers: authHeaders(),
+            body: JSON.stringify({ user_id: userId, role: newRole })
+        });
+        if (res.ok) {
+            showNotification('Роль обновлена', 'success');
+            await toggleBoardMembers(); // переоткрываем панель, чтобы обновить список
+        } else {
+            showNotification('Ошибка обновления роли', 'error');
+        }
+    } catch(e) {
+        showNotification('Ошибка сети', 'error');
+    }
+}
+
+
 
   if (token && currentUser) { showApp(); }
+
 </script>
+
+
+<!-- ══════════════ НАСТРОЙКИ (правильный блок) ══════════════ -->
+<div class="side-panel panel-right" id="settingsPanel">
+  <div class="panel-header">
+    <h2>Настройки доски</h2>
+    <button class="panel-close" onclick="toggleSettings()">✕</button>
+  </div>
+  <div class="panel-body">
+    <div class="settings-section">
+      <label>Название системы</label>
+      <input type="text" class="settings-input" id="systemNameInput" placeholder="Task Manager" />
+      <button class="btn-save-setting" onclick="saveSystemName()">Сохранить</button>
+    </div>
+    <div class="settings-section">
+      <label>Готовые темы</label>
+      <div class="theme-grid">
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#F5EDD6,#E8CDA0);" data-theme="sand" onclick="applyTheme('sand')"><span>Песок</span></div>
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#EEF0FB,#D8D2F0);" data-theme="lavender" onclick="applyTheme('lavender')"><span>Лаванда</span></div>
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#E8F5F0,#BFE2D8);" data-theme="mint" onclick="applyTheme('mint')"><span>Мята</span></div>
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#FDF0F0,#F5CEBF);" data-theme="peach" onclick="applyTheme('peach')"><span>Персик</span></div>
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#EEF2F7,#C8D6E8);" data-theme="steel" onclick="applyTheme('steel')"><span>Сталь</span></div>
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#1A1A2E,#0F3460);" data-theme="night" onclick="applyTheme('night')"><span style="color:rgba(255,255,255,0.7)">Ночь</span></div>
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#F5F0E8,#E8E2D8);" data-theme="beige" onclick="applyTheme('beige')"><span>Бежевая</span></div>
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#F0F4F8,#DDE8F0);" data-theme="blue" onclick="applyTheme('blue')"><span>Голубая</span></div>
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#FAF0F0,#F0DEDE);" data-theme="rose" onclick="applyTheme('rose')"><span>Розовая</span></div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <label>Свой градиент фона</label>
+      <div class="color-row"><span>Цвет 1</span><input type="color" id="gradColor1" value="#F5EDD6" oninput="applyGradient()"></div>
+      <div class="color-row"><span>Цвет 2</span><input type="color" id="gradColor2" value="#E8CDA0" oninput="applyGradient()"></div>
+      <div class="opacity-row">
+        <span>Угол</span>
+        <input type="range" id="gradAngle" min="0" max="360" value="135" oninput="applyGradient();document.getElementById('gradAngleVal').textContent=this.value+'°'">
+        <span class="opacity-val" id="gradAngleVal">135°</span>
+      </div>
+    </div>
+    <div class="settings-section">
+      <label>Цвета элементов</label>
+      <div class="color-row"><span>Шапка</span><input type="color" id="colorHeader" value="#EDE8DF" oninput="applyCustomColor('header', this.value)"></div>
+      <div class="color-row"><span>Карточки</span><input type="color" id="colorCard" value="#FFFFFF" oninput="applyCustomColor('card', this.value)"></div>
+    </div>
+    <div class="settings-section">
+      <label>Прозрачность</label>
+      <div class="opacity-row"><span>Шапка</span><input type="range" id="opacityHeader" min="50" max="100" value="85" oninput="applyOpacity('Header', this.value)"><span class="opacity-val" id="opacityHeaderVal">85%</span></div>
+      <div class="opacity-row"><span>Колонки</span><input type="range" id="opacityColumn" min="30" max="100" value="70" oninput="applyOpacity('Column', this.value)"><span class="opacity-val" id="opacityColumnVal">70%</span></div>
+      <div class="opacity-row"><span>Карточки</span><input type="range" id="opacityCard" min="50" max="100" value="85" oninput="applyOpacity('Card', this.value)"><span class="opacity-val" id="opacityCardVal">85%</span></div>
+    </div>
+    <button class="btn-reset" onclick="resetTheme()">Сбросить к стандарту</button>
+  </div>
+</div>
+
+<div class="side-panel panel-right" id="boardMembersPanel">
+  <div class="panel-header">
+    <h2>Участники доски</h2>
+    <button class="panel-close" onclick="toggleBoardMembers()">✕</button>
+  </div>
+  <div class="panel-body">
+    <div id="boardMembersList" style="display:flex;flex-direction:column;gap:12px;"></div>
+  </div>
+</div>
+
 </body>
 </html>

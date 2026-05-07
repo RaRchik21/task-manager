@@ -14,6 +14,7 @@ urlpatterns = [
     # Фронтенд страницы
     path('main/', TemplateView.as_view(template_name='index.html'), name='main'),
     path('structure/', TemplateView.as_view(template_name='orgchart.html'), name='structure'),
+    path('boards/', TemplateView.as_view(template_name='boards.html'), name='boards'),
     
     # Для обратной совместимости
     path('index.html', TemplateView.as_view(template_name='index.html')),

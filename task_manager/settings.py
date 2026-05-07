@@ -3,15 +3,14 @@ Django settings for task_manager project.
 """
 
 from pathlib import Path
-from decouple import config
-import dj_database_url
+import os
 from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-^@fy#^$f5%)v)lx6w!!+bt^pho@m%ll^%7v&xkah&vmg0=ah22')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-^@fy#^$f5%)v)lx6w!!+bt^pho@m%ll^%7v&xkah&vmg0=ah22')
 
-DEBUG = config('DEBUG', default=False, cast=bool)
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
 # 1. Разрешенные хосты (у вас уже может быть заполнено)
 ALLOWED_HOSTS = ['*']
@@ -39,13 +38,11 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'rest_framework_simplejwt',
-    'corsheaders',
 
     'board',
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -76,9 +73,10 @@ TEMPLATES = [
 WSGI_APPLICATION = 'task_manager.wsgi.application'
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default=config('DATABASE_URL', default=f'sqlite:///{BASE_DIR}/db.sqlite3')
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
 
 AUTH_PASSWORD_VALIDATORS = [

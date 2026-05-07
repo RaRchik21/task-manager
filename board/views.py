@@ -1,10 +1,13 @@
+from django.db.models import Q
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
+from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 from rest_framework.permissions import BasePermission, IsAuthenticated
-from .models import User, Column, Task, BoardSettings
+from .models import User, Column, Task, BoardSettings, Board, BoardMembership, BoardChatMessage, Notification, TaskComment
 from .serializers import (UserSerializer, UserCreateSerializer,
-                          ColumnSerializer, TaskSerializer, BoardSettingsSerializer)
+                          ColumnSerializer, TaskSerializer, BoardSettingsSerializer, BoardSerializer, BoardMembershipSerializer, BoardChatMessageSerializer,
+                          NotificationSerializer, UserShortSerializer, TaskCommentSerializer)
 
 
 # ═══════════════════════════════
@@ -37,9 +40,7 @@ def create_test_users(request):
         try:
             if not User.objects.filter(username=username).exists():
                 user = User.objects.create_user(
-                    username=username,
-                    password=password,
-                    role=role,
+                    username=username, password=password, role=role,
                     email=f"{username}@example.com"
                 )
                 results.append({'username': username, 'status': 'created', 'role': role})
@@ -51,17 +52,9 @@ def create_test_users(request):
     return JsonResponse({'users': results, 'message': 'Готово! Теперь можно входить'})
 
 
-
-from django.http import JsonResponse
-from django.core.management import call_command
-from django.views.decorators.csrf import csrf_exempt
-
-
 @csrf_exempt
 def create_admin(request):
-    from django.contrib.auth import get_user_model
     User = get_user_model()
-    
     if not User.objects.filter(username='admin').exists():
         User.objects.create_superuser('admin', 'admin@example.com', 'admin123')
         return JsonResponse({'status': 'created', 'username': 'admin', 'password': 'admin123'})
@@ -83,18 +76,38 @@ class IsAdmin(BasePermission):
 
 class CanCreateColumn(BasePermission):
     def has_permission(self, request, view):
-        return request.user.role in ['admin', 'chief']
+        if request.user.role in ['admin', 'chief']:
+            return True
+        # Проверяем права на доске
+        board_id = request.data.get('board') or request.query_params.get('board')
+        if board_id:
+            try:
+                membership = BoardMembership.objects.get(board_id=board_id, user=request.user)
+                return membership.edit_columns
+            except BoardMembership.DoesNotExist:
+                pass
+        return False
+
+class CanEditColumn(BasePermission):
+    def has_permission(self, request, view):
+        if request.user.role in ['admin', 'chief', 'lead']:
+            return True
+        # Проверяем права на доске
+        board_id = request.data.get('board') or request.query_params.get('board')
+        if board_id:
+            try:
+                membership = BoardMembership.objects.get(board_id=board_id, user=request.user)
+                return membership.edit_columns
+            except BoardMembership.DoesNotExist:
+                pass
+        return False
 
 class CanSeeAllTasks(BasePermission):
     def has_permission(self, request, view):
         return request.user.role in ['admin', 'chief', 'lead']
+
 ROLE_HIERARCHY = {
-    'admin': 6,
-    'chief': 5,
-    'lead': 4,
-    'specialist': 3,
-    'senior': 2,
-    'junior': 1,
+    'admin': 6, 'chief': 5, 'lead': 4, 'specialist': 3, 'senior': 2, 'junior': 1,
 }
 
 class CanManageUsers(BasePermission):
@@ -102,7 +115,6 @@ class CanManageUsers(BasePermission):
         return request.user.role in ['admin', 'chief', 'lead']
     
     def has_object_permission(self, request, view, obj):
-        # Нельзя менять роль пользователя с более высокой или равной ролью
         requester_level = ROLE_HIERARCHY.get(request.user.role, 0)
         target_level = ROLE_HIERARCHY.get(obj.role, 0)
         return requester_level > target_level
@@ -152,25 +164,19 @@ class UserViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def subordinates(self, request):
-        """Получить всех подчинённых текущего пользователя"""
         user = request.user
         result = []
 
         if user.role == 'specialist':
-            # Только свои младшие
             juniors = User.objects.filter(supervisor=user)
             result = list(juniors)
-
         elif user.role == 'lead':
-            # Свои специалисты + их младшие
             specialists = User.objects.filter(supervisor=user)
             result = list(specialists)
             for s in specialists:
                 juniors = User.objects.filter(supervisor=s)
                 result.extend(juniors)
-
         elif user.role in ['chief', 'admin']:
-            # Все подчинённые рекурсивно
             result = list(User.objects.exclude(id=user.id))
 
         serializer = UserSerializer(result, many=True)
@@ -189,16 +195,164 @@ class ColumnViewSet(viewsets.ModelViewSet):
         if self.action in ['create', 'destroy']:
             return [IsAuthenticated(), CanCreateColumn()]
         if self.action in ['update', 'partial_update']:
-            return [IsAuthenticated(), CanManageUsers()]
+            return [IsAuthenticated(), CanEditColumn()]
         return [IsAuthenticated()]
+
+    def get_queryset(self):
+        qs = Column.objects.all()
+        board_id = self.request.query_params.get('board', None)
+        if board_id:
+            if self.request.user.role not in ['admin', 'chief', 'lead']:
+                accessible = Board.objects.filter(id=board_id, is_archived=False).filter(
+                    Q(privacy='public', allow_anyone_view=True) |
+                    Q(memberships__user=self.request.user)
+                ).exists()
+                if not accessible:
+                    return Column.objects.none()
+            qs = qs.filter(board_id=board_id)
+        return qs
 
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated, CanCreateColumn])
     def reorder(self, request):
-        """Изменить порядок колонок"""
         orders = request.data.get('orders', [])
         for item in orders:
             Column.objects.filter(id=item['id']).update(order=item['order'])
         return Response({'status': 'ok'})
+
+
+# ═══════════════════════════════
+#           ДОСКИ И ЧАТ
+# ═══════════════════════════════
+
+class BoardViewSet(viewsets.ModelViewSet):
+    queryset = Board.objects.filter(is_archived=False)
+    serializer_class = BoardSerializer
+
+    def get_permissions(self):
+        if self.action in ['create', 'destroy', 'update', 'partial_update']:
+            return [IsAuthenticated()]
+        return [IsAuthenticated()]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role in ['admin', 'chief', 'lead']:
+            return Board.objects.filter(is_archived=False)
+        boards = Board.objects.filter(is_archived=False).filter(
+            Q(privacy='public', allow_anyone_view=True) |
+            Q(memberships__user=user) |
+            Q(creator=user)
+        ).distinct()
+        return boards
+
+    def perform_create(self, serializer):
+        board = serializer.save(creator=self.request.user)
+        BoardMembership.objects.create(board=board, user=self.request.user, role='admin')
+
+    def destroy(self, request, *args, **kwargs):
+        board = self.get_object()
+        if request.user != board.creator and request.user.role != 'admin':
+            return Response({'error': 'Недостаточно прав'}, status=403)
+        return super().destroy(request, *args, **kwargs)
+
+
+    @action(detail=True, methods=['patch'], url_path='update_membership')
+    def update_membership(self, request, pk=None):
+        board = self.get_object()
+        user_id = request.data.get('user_id')
+        role = request.data.get('role')
+        view_all_tasks = request.data.get('view_all_tasks')
+        edit_columns = request.data.get('edit_columns')
+        reorder_columns = request.data.get('reorder_columns')
+        if not user_id:
+            return Response({'error': 'Не указан user_id'}, status=400)
+        if role and role not in ['admin', 'editor', 'viewer']:
+            return Response({'error': 'Недопустимая роль'}, status=400)
+        # Проверка прав: только создатель доски или админ может менять роли и права
+        if request.user != board.creator and request.user.role != 'admin':
+            return Response({'error': 'Недостаточно прав'}, status=403)
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'error': 'Пользователь не найден'}, status=404)
+        membership, created = BoardMembership.objects.get_or_create(board=board, user=user)
+        if role is not None:
+            membership.role = role
+        if view_all_tasks is not None:
+            membership.view_all_tasks = view_all_tasks
+        if edit_columns is not None:
+            membership.edit_columns = edit_columns
+        if reorder_columns is not None:
+            membership.reorder_columns = reorder_columns
+        membership.save()
+        return Response({'status': 'ok', 'role': membership.role, 'view_all_tasks': membership.view_all_tasks, 'edit_columns': membership.edit_columns, 'reorder_columns': membership.reorder_columns})
+
+
+    @action(detail=True, methods=['post'])
+    def add_member(self, request, pk=None):
+        board = self.get_object()
+        user_id = request.data.get('user_id')
+        role = request.data.get('role', 'viewer')
+        if not user_id:
+            return Response({'error': 'user_id required'}, status=400)
+        if request.user != board.creator and request.user.role != 'admin':
+            return Response({'error': 'Недостаточно прав'}, status=403)
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'error': 'Пользователь не найден'}, status=404)
+        membership, _ = BoardMembership.objects.get_or_create(board=board, user=user)
+        membership.role = role
+        membership.save()
+        return Response({'status': 'ok'})
+
+    @action(detail=True, methods=['post'])
+    def remove_member(self, request, pk=None):
+        board = self.get_object()
+        user_id = request.data.get('user_id')
+        if not user_id:
+            return Response({'error': 'user_id required'}, status=400)
+        if request.user != board.creator and request.user.role != 'admin':
+            return Response({'error': 'Недостаточно прав'}, status=403)
+        BoardMembership.objects.filter(board=board, user_id=user_id).delete()
+        return Response({'status': 'ok'})
+
+
+class BoardChatViewSet(viewsets.ModelViewSet):
+    queryset = BoardChatMessage.objects.all()
+    serializer_class = BoardChatMessageSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser]
+
+    def get_queryset(self):
+        board_id = self.request.query_params.get('board', None)
+        if board_id:
+            if self.request.user.role not in ['admin', 'chief', 'lead']:
+                accessible = Board.objects.filter(id=board_id, is_archived=False).filter(
+                    Q(privacy='public', allow_anyone_view=True) |
+                    Q(memberships__user=self.request.user) |
+                    Q(creator=self.request.user)
+                ).exists()
+                if not accessible:
+                    return BoardChatMessage.objects.none()
+            return BoardChatMessage.objects.filter(board_id=board_id).select_related(
+                'author', 'reply_to', 'reply_to__author'
+            )
+        return BoardChatMessage.objects.none()
+
+    def perform_create(self, serializer):
+        board = serializer.validated_data.get('board')
+        if not board:
+            raise serializers.ValidationError({'board': 'Не указана доска'})
+        if self.request.user.role not in ['admin', 'chief', 'lead']:
+            allowed = Board.objects.filter(id=board.id, is_archived=False).filter(
+                Q(privacy='public', allow_anyone_view=True) |
+                Q(memberships__user=self.request.user) |
+                Q(creator=self.request.user)
+            ).exists()
+            if not allowed:
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied('У вас нет прав на отправку сообщений в этой доске')
+        serializer.save(author=self.request.user)
 
 
 # ═══════════════════════════════
@@ -211,16 +365,34 @@ class TaskViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         show_archived = self.request.query_params.get('archived', 'false') == 'true'
+        board_id = self.request.query_params.get('board', None)
 
-        if user.role in ['admin', 'chief', 'lead']:
+        # Проверяем, имеет ли пользователь право видеть все задачи на доске
+        can_view_all = False
+        if board_id:
+            try:
+                membership = BoardMembership.objects.get(board_id=board_id, user=user)
+                can_view_all = membership.view_all_tasks
+            except BoardMembership.DoesNotExist:
+                pass
+
+        if user.role in ['admin', 'chief', 'lead'] or can_view_all:
             qs = Task.objects.all().select_related('created_by', 'column')
         elif user.role == 'specialist':
             junior_ids = user.juniors.values_list('id', flat=True)
-            qs = Task.objects.filter(
-                created_by__in=[user.id, *junior_ids]
-            ).select_related('created_by', 'column')
+            qs = Task.objects.filter(created_by__in=[user.id, *junior_ids]).select_related('created_by', 'column')
         else:
             qs = Task.objects.filter(created_by=user).select_related('created_by', 'column')
+
+        if board_id:
+            if user.role not in ['admin', 'chief', 'lead']:
+                accessible = Board.objects.filter(id=board_id, is_archived=False).filter(
+                    Q(privacy='public', allow_anyone_view=True) |
+                    Q(memberships__user=user)
+                ).exists()
+                if not accessible:
+                    return Task.objects.none()
+            qs = qs.filter(column__board_id=board_id)
 
         if not show_archived:
             qs = qs.filter(is_archived=False)
@@ -228,7 +400,18 @@ class TaskViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user, is_archived=False)
+        task = serializer.save(created_by=self.request.user, is_archived=False)
+        board = task.column.board  # получаем доску для уведомлений
+        for user in task.assigned_to.all():
+            if user != self.request.user:
+                Notification.objects.create(
+                    recipient=user,
+                    sender=self.request.user,
+                    task=task,
+                    board=board,
+                    type='assigned',
+                    text=f'{self.request.user.get_full_name_display()} назначил вас исполнителем задачи "{task.title}"'
+                )
 
     @action(detail=True, methods=['post'])
     def archive(self, request, pk=None):
@@ -249,6 +432,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         task.is_archived = False
         task.save()
         return Response({'status': 'unarchived'})
+
     @action(detail=False, methods=['get'])
     def dashboard(self, request):
         from django.db.models import Count
@@ -256,47 +440,39 @@ class TaskViewSet(viewsets.ModelViewSet):
         from datetime import timedelta
 
         user = request.user
-        
-        # Все задачи доступные пользователю
+        board_id = request.query_params.get('board', None)
+
+        # Базовый queryset с учётом прав и доски
         if user.role in ['admin', 'chief', 'lead']:
-            tasks = Task.objects.all()
+            qs = Task.objects.all()
         elif user.role == 'specialist':
             junior_ids = user.juniors.values_list('id', flat=True)
-            tasks = Task.objects.filter(created_by__in=[user.id, *junior_ids])
+            qs = Task.objects.filter(created_by__in=[user.id, *junior_ids])
         else:
-            tasks = Task.objects.filter(created_by=user)
+            qs = Task.objects.filter(created_by=user)
 
-        # Статистика по колонкам
-        by_column = tasks.filter(is_archived=False).values(
-            'column__name', 'column__id'
-        ).annotate(count=Count('id'))
+        if board_id:
+            qs = qs.filter(column__board_id=board_id)
 
-        # Статистика по приоритетам
+        tasks = qs
+
+        by_column = tasks.filter(is_archived=False).values('column__name', 'column__id').annotate(count=Count('id'))
         by_priority = tasks.filter(is_archived=False).values('priority').annotate(count=Count('id'))
 
-        # Статистика по пользователям (только для ГС/ВС)
         by_user = []
         if user.role in ['admin', 'chief', 'lead']:
             by_user = list(tasks.filter(is_archived=False).values(
-                'created_by__id',
-                'created_by__first_name',
-                'created_by__last_name',
-                'created_by__username'
+                'created_by__id', 'created_by__first_name', 'created_by__last_name', 'created_by__username'
             ).annotate(count=Count('id')).order_by('-count')[:10])
 
-        # График активности за 7 дней
         today = timezone.now().date()
         activity = []
         for i in range(6, -1, -1):
             day = today - timedelta(days=i)
             count = tasks.filter(created_at__date=day).count()
-            activity.append({ 'date': str(day), 'count': count })
+            activity.append({'date': str(day), 'count': count})
 
-        # Просроченные
-        overdue = tasks.filter(
-            is_archived=False,
-            deadline__lt=timezone.now().date()
-        ).count()
+        overdue = tasks.filter(is_archived=False, deadline__lt=timezone.now().date()).count()
 
         return Response({
             'total': tasks.filter(is_archived=False).count(),
@@ -319,7 +495,6 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def create_for_user(self, request):
-        """Создать задачу от имени пользователя по telegram_username"""
         tg = request.data.get('telegram_username')
         try:
             target_user = User.objects.get(telegram_username=tg)
@@ -365,3 +540,64 @@ class BoardSettingsViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
+
+
+# ═══════════════════════════════
+#         КОММЕНТАРИИ
+# ═══════════════════════════════
+
+class TaskCommentViewSet(viewsets.ModelViewSet):
+    serializer_class = TaskCommentSerializer
+
+    def get_queryset(self):
+        task_id = self.request.query_params.get('task', None)
+        if task_id:
+            # Подгружаем автора и родительские комментарии для вложенности
+            return TaskComment.objects.filter(task_id=task_id).select_related('author', 'parent').prefetch_related('replies')
+        return TaskComment.objects.none()
+
+    def perform_create(self, serializer):
+        comment = serializer.save(author=self.request.user)
+        board = comment.task.column.board
+        for user in comment.mentioned_users.all():
+            if user != self.request.user:
+                Notification.objects.create(
+                    recipient=user,
+                    sender=self.request.user,
+                    task=comment.task,
+                    board=board,
+                    type='mentioned',
+                    text=f'{self.request.user.get_full_name_display()} упомянул вас в комментарии к задаче "{comment.task.title}"'
+                )
+
+
+# ═══════════════════════════════
+#         УВЕДОМЛЕНИЯ
+# ═══════════════════════════════
+
+class NotificationViewSet(viewsets.ModelViewSet):
+    serializer_class = NotificationSerializer
+
+    def get_queryset(self):
+        qs = Notification.objects.filter(recipient=self.request.user).select_related('sender', 'task', 'board')
+        board_id = self.request.query_params.get('board', None)
+        if board_id:
+            qs = qs.filter(board_id=board_id)
+        return qs
+
+    @action(detail=False, methods=['get'])
+    def unread_count(self, request):
+        count = Notification.objects.filter(recipient=request.user, is_read=False).count()
+        return Response({'count': count})
+
+    @action(detail=False, methods=['post'])
+    def mark_all_read(self, request):
+        Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
+        return Response({'status': 'ok'})
+
+    @action(detail=True, methods=['post'])
+    def mark_read(self, request, pk=None):
+        notif = self.get_object()
+        notif.is_read = True
+        notif.save()
+        return Response({'status': 'ok'})
