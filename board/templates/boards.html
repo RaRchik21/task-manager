@@ -16,6 +16,7 @@
     .btn:hover { background: white; transform: translateY(-1px); }
     .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
     .btn.create-board { background: linear-gradient(135deg,#4D45D5,#7A6BF7); color: #fff; border: none; box-shadow: 0 18px 45px rgba(72,60,170,0.12); }
+    .btn.logout-btn { background: #2F2F33; color: #fff; border: none; }
     .btn-primary { background: #4D45D5; color: #fff; border: none; }
     .member-remove { border: none; background: #E24B4A; color: white; border-radius: 12px; width: 34px; height: 34px; font-size: 16px; cursor: pointer; }
     .board-grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); gap:20px; }
@@ -58,6 +59,12 @@
 
     /* Уведомления */
     .custom-notification { position: fixed; bottom: 20px; right: 20px; padding: 12px 24px; border-radius: 10px; font-size: 14px; z-index: 10000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-weight: 500; animation: slideInError 0.3s ease; }
+    .permission-note { display:inline-flex; margin-left:8px; padding:2px 8px; border-radius:999px; font-size:11px; color:#4D45D5; background:rgba(77,69,213,0.08); }
+    .dashboard-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:18px; }
+    .dashboard-card { padding:16px; border-radius:18px; background:rgba(245,244,242,0.9); border:1px solid rgba(211,209,199,0.6); }
+    .dashboard-card strong { display:block; font-size:26px; margin-bottom:4px; }
+    .dashboard-list { display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+    .dashboard-row { display:grid; grid-template-columns:1fr auto; gap:12px; padding:10px 12px; border-radius:14px; background:rgba(245,244,242,0.75); }
     @keyframes slideInError {
       from { transform: translateX(100%); opacity: 0; }
       to { transform: translateX(0); opacity: 1; }
@@ -76,10 +83,12 @@
         <div class="page-subtitle">Здесь отображаются все доступные проекты. Создавайте новые доски и переходите на нужные проекты одним кликом.</div>
       </div>
       <div class="header-actions">
-        <a href="/orgchart.html" class="btn" style="text-decoration:none;">🏢 Структура</a>
+        <a href="/structure/" class="btn" style="text-decoration:none;">🏢 Структура</a>
         <button class="btn" onclick="openGlobalUsers()">👥 Пользователи</button>
+        <button class="btn" id="boardsDashboardButton" onclick="openBoardsDashboard()" style="display:none;">📊 Дашборд</button>
         <div id="currentUserInfo" style="font-size:14px;color:#6E6A61;align-self:center;"></div>
         <button class="btn create-board" onclick="openBoardModal()">+ Создать доску</button>
+        <button class="btn logout-btn" onclick="logout()">Выйти из аккаунта</button>
       </div>
     </header>
 
@@ -133,30 +142,70 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="boardsDashboardModal">
+    <div class="modal" style="width:760px;max-width:95vw;">
+      <h2>Дашборд по всем доскам</h2>
+      <div class="dashboard-cards" id="boardsDashboardCards"></div>
+      <h3 style="margin:8px 0 10px;">Самые загруженные доски</h3>
+      <div class="dashboard-list" id="boardsTopBoards"></div>
+      <h3 style="margin:18px 0 10px;">Лидеры по участникам</h3>
+      <div class="dashboard-list" id="boardsTopMembers"></div>
+      <h3 style="margin:18px 0 10px;">Создатели досок</h3>
+      <div class="dashboard-list" id="boardsTopCreators"></div>
+      <div class="modal-buttons" style="margin-top:18px;">
+        <button class="modal-cancel" onclick="closeBoardsDashboard()">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const API = '/api';
+    const ROLE_HIERARCHY = { admin: 6, chief: 5, lead: 4, specialist: 3, senior: 2, junior: 1 };
     let token = localStorage.getItem('token');
     let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
-    let allUsers = [];
+    let boardUsers = [];
     let editingBoardId = null;
     let allBoards = []; // глобальная переменная для хранения списка досок
+    let systemName = 'Task Manager';
 
     async function init() {
+      await loadBoardSettings();
       if (token && !currentUser) {
         await restoreCurrentUserFromToken();
       }
       if (!token || !currentUser) {
         renderLogin();
+        document.title = systemName;
+        const loginHeading = document.querySelector('.login-card h1, body h1');
+        if (loginHeading) {
+          loginHeading.textContent = systemName;
+        }
         return;
       }
-      await loadUsers();
-      await loadBoardSettings();
+      await loadBoardUsers();
       await loadBoards();
       renderUserInfo();
+      initMultiSelects();
+      const dashboardButton = document.getElementById('boardsDashboardButton');
+      if (dashboardButton) dashboardButton.style.display = canOpenBoardsDashboard() ? 'inline-flex' : 'none';
     }
 
     function authHeaders() {
       return { 'Content-Type':'application/json', 'Accept':'application/json', 'Authorization':`Bearer ${token}` };
+    }
+
+    function canChangeRoles() {
+      return ['admin', 'chief', 'lead'].includes(currentUser?.role);
+    }
+
+    function canOpenBoardsDashboard() {
+      return ['admin', 'chief', 'lead'].includes(currentUser?.role);
+    }
+
+    function getRoleDefaultPermissions(role) {
+      return ['admin', 'chief', 'lead'].includes(role)
+        ? { view_all_tasks: true, edit_columns: true, reorder_columns: true }
+        : { view_all_tasks: false, edit_columns: false, reorder_columns: false };
     }
 
     function decodeJwt(token) {
@@ -212,7 +261,7 @@
       token = data.access;
       localStorage.setItem('token', token);
       await loadCurrentUser(username);
-      location.reload();
+      window.location.href = '/boards/';
     }
 
     async function loadCurrentUser(username) {
@@ -223,11 +272,11 @@
       localStorage.setItem('currentUser', JSON.stringify(currentUser));
     }
 
-    async function loadUsers() {
-      const res = await fetch(`${API}/users/`, { headers: authHeaders() });
+    async function loadBoardUsers() {
+      const res = await fetch(`${API}/users/all_for_board/`, { headers: authHeaders() });
       if (!res.ok) return;
       const data = await res.json();
-      allUsers = data.results || data;
+      boardUsers = data.results || data;
       renderBoardUserOptions();
     }
 
@@ -235,7 +284,10 @@
       const participantSelect = document.getElementById('boardParticipants');
       const viewerSelect = document.getElementById('boardViewers');
       if (!participantSelect || !viewerSelect) return;
-      const options = allUsers.map(u => `<option value="${u.id}">${escHtml(u.full_name || u.username)} (${escHtml(u.username)})</option>`).join('');
+      const options = boardUsers
+        .filter(u => Number(u.id) !== Number(currentUser?.id))
+        .map(u => `<option value="${u.id}">${escHtml(u.full_name || u.username)} (${escHtml(u.username)})</option>`)
+        .join('');
       participantSelect.innerHTML = options;
       viewerSelect.innerHTML = options;
     }
@@ -253,16 +305,37 @@
 
     async function loadBoardSettings() {
       try {
-        const res = await fetch(`${API}/board-settings/current/`, { headers: authHeaders() });
+        const headers = token
+          ? authHeaders()
+          : { 'Accept': 'application/json' };
+        const res = await fetch(`${API}/board-settings/current/`, { headers });
         if (!res.ok) return;
         const data = await res.json();
         if (data.system_name) {
-          document.getElementById('systemName').textContent = data.system_name;
+          systemName = data.system_name;
+          const titleEl = document.getElementById('systemName');
+          if (titleEl) {
+            titleEl.textContent = data.system_name;
+          }
           document.title = data.system_name;
         }
       } catch(e) {
         console.error(e);
       }
+    }
+
+    function initMultiSelects() {
+      ['boardParticipants', 'boardViewers'].forEach((id) => {
+        const select = document.getElementById(id);
+        if (!select || select.dataset.multiClickReady === 'true') return;
+        select.dataset.multiClickReady = 'true';
+        select.addEventListener('mousedown', (event) => {
+          const option = event.target.closest('option');
+          if (!option) return;
+          event.preventDefault();
+          option.selected = !option.selected;
+        });
+      });
     }
 
     async function loadBoards() {
@@ -295,6 +368,38 @@
         </div>
       `).join('');
       empty.style.display = boards.length ? 'none' : 'block';
+    }
+
+    async function openBoardsDashboard() {
+      if (!canOpenBoardsDashboard()) return;
+      const res = await fetch(`${API}/boards/dashboard_overview/`, { headers: authHeaders() });
+      if (!res.ok) {
+        showNotification('Не удалось загрузить дашборд', 'error');
+        return;
+      }
+      const data = await res.json();
+      document.getElementById('boardsDashboardCards').innerHTML = `
+        <div class="dashboard-card"><strong>${data.boards_total}</strong><span>Всего досок</span></div>
+        <div class="dashboard-card"><strong>${data.active_tasks}</strong><span>Активных задач</span></div>
+        <div class="dashboard-card"><strong>${data.overdue_tasks}</strong><span>Просрочено</span></div>
+        <div class="dashboard-card"><strong>${data.avg_tasks_per_board}</strong><span>Задач на доску</span></div>
+        <div class="dashboard-card"><strong>${data.avg_members_per_board}</strong><span>Участников на доску</span></div>
+        <div class="dashboard-card"><strong>${data.boards_with_open_access}</strong><span>С открытым доступом</span></div>
+      `;
+      document.getElementById('boardsTopBoards').innerHTML = (data.top_boards || []).map(item => `
+        <div class="dashboard-row"><span>${escHtml(item.column__board__name)}</span><strong>${item.count}</strong></div>
+      `).join('') || '<div class="dashboard-row"><span>Пока нет данных</span><strong>0</strong></div>';
+      document.getElementById('boardsTopMembers').innerHTML = (data.top_membership_boards || []).map(item => `
+        <div class="dashboard-row"><span>${escHtml(item.name)}</span><strong>${item.count}</strong></div>
+      `).join('') || '<div class="dashboard-row"><span>Пока нет данных</span><strong>0</strong></div>';
+      document.getElementById('boardsTopCreators').innerHTML = (data.top_creators || []).map(item => `
+        <div class="dashboard-row"><span>${escHtml(([item.creator__first_name, item.creator__last_name].filter(Boolean).join(' ') || item.creator__username || 'Без имени'))}</span><strong>${item.count}</strong></div>
+      `).join('') || '<div class="dashboard-row"><span>Пока нет данных</span><strong>0</strong></div>';
+      document.getElementById('boardsDashboardModal').classList.add('active');
+    }
+
+    function closeBoardsDashboard() {
+      document.getElementById('boardsDashboardModal').classList.remove('active');
     }
 
     function clearBoardForm() {
@@ -399,7 +504,8 @@
     let globalUsersList = [];
 
     async function openGlobalUsers() {
-      const res = await fetch(`${API}/users/`, { headers: authHeaders() });
+      document.querySelector('.global-users-modal')?.remove();
+      const res = await fetch(`${API}/users/all_for_board/`, { headers: authHeaders() });
       const data = await res.json();
       globalUsersList = data.results || data;
       const roles = { lead:'Ведущий специалист', specialist:'Специалист', senior:'Старший специалист', junior:'Младший специалист', chief:'Главный специалист', admin:'Администратор' };
@@ -410,17 +516,70 @@
             <div class="user-name">${u.full_name||u.username}</div>
             <div class="user-meta">${roles[u.role]||u.role}</div>
           </div>
+          ${canChangeRoles() && ROLE_HIERARCHY[currentUser?.role] > ROLE_HIERARCHY[u.role]
+            ? `<select class="role-select" onchange="changeGlobalUserRole(${u.id}, this.value)">${Object.entries(roles)
+                .filter(([value]) => ROLE_HIERARCHY[currentUser?.role] > ROLE_HIERARCHY[value])
+                .map(([value, label]) => `<option value="${value}"${u.role===value ? ' selected' : ''}>${label}</option>`)
+                .join('')}</select>`
+            : ''}
         </div>
       `).join('');
       const modal = document.createElement('div');
-      modal.className = 'modal-overlay active';
+      modal.className = 'modal-overlay active global-users-modal';
       modal.innerHTML = `<div class="modal" style="width:480px;"><h2>Пользователи системы</h2><div style="max-height:60vh;overflow-y:auto;">${html}</div><div class="modal-buttons"><button class="modal-cancel" onclick="this.closest('.modal-overlay').remove()">Закрыть</button></div></div>`;
       document.body.appendChild(modal);
       modal.addEventListener('click', (e) => { if(e.target === modal) modal.remove(); });
     }
 
+    async function changeGlobalUserRole(userId, role) {
+      const res = await fetch(`${API}/users/${userId}/`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify({ role })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        showNotification(err.error || 'Не удалось изменить роль', 'error');
+        return;
+      }
+      showNotification('Роль обновлена', 'success');
+      await openGlobalUsers();
+    }
+
     // Показать участников конкретной доски
     let currentBoardForMembers = null;
+
+function renderBoardMember(member, board, canManage, rolesMap) {
+  const roleDefaults = getRoleDefaultPermissions(member.user?.role);
+  const effectivePermissions = {
+    view_all_tasks: member.view_all_tasks || roleDefaults.view_all_tasks,
+    edit_columns: member.edit_columns || roleDefaults.edit_columns,
+    reorder_columns: member.reorder_columns || roleDefaults.reorder_columns
+  };
+  const inherited = {
+    view_all_tasks: roleDefaults.view_all_tasks && !member.view_all_tasks,
+    edit_columns: roleDefaults.edit_columns && !member.edit_columns,
+    reorder_columns: roleDefaults.reorder_columns && !member.reorder_columns
+  };
+  return `
+      <div class="user-card">
+        <div class="user-avatar">${((member.user?.first_name||'')[0]||(member.user?.username||'')[0]||'?').toUpperCase()}${((member.user?.last_name||'')[0]||'').toUpperCase()}</div>
+        <div class="user-info">
+          <div class="user-name">${member.user?.full_name || member.user?.username}</div>
+          <div class="user-meta">Роль: ${rolesMap[member.role]}</div>
+          ${canManage ? `
+            <div class="user-permissions">
+              <strong style="display:block;margin-bottom:6px;">Настройки доступа:</strong>
+              <label><input type="checkbox" ${effectivePermissions.view_all_tasks ? 'checked' : ''} ${inherited.view_all_tasks ? 'disabled' : ''} onchange="changeBoardMemberPermission(${board.id}, ${member.user.id}, 'view_all_tasks', this.checked)"> Просматривать все задачи${inherited.view_all_tasks ? '<span class="permission-note">По роли</span>' : ''}</label>
+              <label><input type="checkbox" ${effectivePermissions.edit_columns ? 'checked' : ''} ${inherited.edit_columns ? 'disabled' : ''} onchange="changeBoardMemberPermission(${board.id}, ${member.user.id}, 'edit_columns', this.checked)"> Редактировать колонки${inherited.edit_columns ? '<span class="permission-note">По роли</span>' : ''}</label>
+              <label><input type="checkbox" ${effectivePermissions.reorder_columns ? 'checked' : ''} ${inherited.reorder_columns ? 'disabled' : ''} onchange="changeBoardMemberPermission(${board.id}, ${member.user.id}, 'reorder_columns', this.checked)"> Менять порядок колонок${inherited.reorder_columns ? '<span class="permission-note">По роли</span>' : ''}</label>
+            </div>
+          ` : ''}
+        </div>
+        ${canManage ? `<button class="member-remove" onclick="removeMemberFromBoard(${board.id}, ${member.user.id})">✕</button>` : ''}
+      </div>
+    `;
+}
 
 async function showBoardMembers(boardId) {
   const board = allBoards.find(b => Number(b.id) === Number(boardId));
@@ -439,7 +598,7 @@ async function showBoardMembers(boardId) {
   let availableUsers = [];
   if (addMemberSelect) {
     const existingMemberIds = members.map(m => m.user?.id || m.user).filter(Boolean);
-    availableUsers = allUsers.filter(u => u.id !== currentUser.id && !existingMemberIds.includes(u.id));
+    availableUsers = boardUsers.filter(u => u.id !== currentUser.id && !existingMemberIds.includes(u.id));
     addMemberSelect.innerHTML = [`
       <option value="">-- Добавить участника --</option>
       ${availableUsers.length ? availableUsers.map(u => `<option value="${u.id}">${escHtml(u.full_name || u.username)} (${escHtml(u.username)})</option>`).join('') : '<option value="">Нет доступных пользователей</option>'}
@@ -474,6 +633,26 @@ async function showBoardMembers(boardId) {
         ${canManage ? `<button class="member-remove" onclick="removeMemberFromBoard(${board.id}, ${m.user.id})">✕</button>` : ''}
       </div>
     `).join('');
+    if (canManage) {
+      const cards = list.querySelectorAll('.user-card');
+      members.forEach((member, index) => {
+        const card = cards[index];
+        if (!card) return;
+        const defaults = getRoleDefaultPermissions(member.user?.role);
+        const checkboxes = card.querySelectorAll('input[type="checkbox"]');
+        const permissionKeys = ['view_all_tasks', 'edit_columns', 'reorder_columns'];
+        checkboxes.forEach((checkbox, checkboxIndex) => {
+          const key = permissionKeys[checkboxIndex];
+          if (!key || !defaults[key] || member[key]) return;
+          checkbox.checked = true;
+          checkbox.disabled = true;
+          const note = document.createElement('span');
+          note.className = 'permission-note';
+          note.textContent = 'По роли';
+          checkbox.parentElement.appendChild(note);
+        });
+      });
+    }
   }
 
   if (!canManage) {
@@ -583,6 +762,27 @@ async function deleteBoard(boardId) {
     showNotification('Ошибка сети', 'error');
   }
 }
+
+function logout() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('currentUser');
+  token = null;
+  currentUser = null;
+  window.location.href = '/boards/';
+}
+
+function closeTopModalOnEscape() {
+  if (document.getElementById('boardsDashboardModal')?.classList.contains('active')) return closeBoardsDashboard();
+  if (document.getElementById('boardMembersModal')?.classList.contains('active')) return closeMembersModal();
+  if (document.getElementById('boardModal')?.classList.contains('active')) return closeBoardModal();
+  const dynamicModal = document.querySelector('.global-users-modal.active');
+  if (dynamicModal) dynamicModal.remove();
+}
+
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape') return;
+  closeTopModalOnEscape();
+});
 
     init();
   </script>

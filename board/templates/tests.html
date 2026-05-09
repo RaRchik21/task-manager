@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Чекбокс для тестов</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f5f0e8;
+    padding: 30px;
+    color: #2c2c2a;
+  }
+  h1 { font-size: 24px; font-weight: 600; margin-bottom: 10px; }
+  .stats {
+    display: inline-flex;
+    gap: 16px;
+    background: #e8e2d8;
+    padding: 7px 18px;
+    border-radius: 20px;
+    font-size: 14px;
+    color: #5f5e5a;
+    margin-bottom: 16px;
+  }
+  .stats strong { font-weight: 600; }
+  .passed-val { color: #3b6d11; }
+  .failed-val { color: #a32d2d; }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .actions button {
+    background: #444441;
+    color: #fff;
+    border: none;
+    padding: 9px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .actions button:hover { background: #2c2c2a; }
+
+  .add-form {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+  }
+  .add-form.open { display: flex; }
+  .add-form input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 7px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+  }
+  .add-form input:focus { border-color: #888; }
+  .add-form button {
+    background: #444441;
+    color: #fff;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .add-form button:last-child { background: #999; }
+  .add-form button:hover { opacity: 0.85; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+  }
+  thead th {
+    background: #e8e2d8;
+    padding: 11px 14px;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 600;
+    color: #5f5e5a;
+    border-bottom: 1px solid #d9d3c8;
+  }
+  tbody tr { border-bottom: 1px solid #f0ebe2; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr.passed { background: #d4edda; }
+  tbody tr.failed { background: #f8d7da; }
+  td {
+    padding: 11px 14px;
+    color: #2c2c2a;
+    vertical-align: middle;
+    font-size: 14px;
+  }
+  td:first-child { width: 40px; color: #888; font-size: 13px; }
+  td:nth-child(3) { width: 110px; white-space: nowrap; }
+  td:nth-child(4) { width: 40px; }
+
+  .st-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 4px;
+    font-size: 20px;
+    opacity: 0.35;
+    transition: opacity 0.15s, transform 0.1s;
+    line-height: 1;
+  }
+  .st-btn.active { opacity: 1; transform: scale(1.15); }
+  .st-btn:hover { opacity: 0.75; }
+
+  .del-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 6px;
+    font-size: 16px;
+    color: #bbb;
+    line-height: 1;
+  }
+  .del-btn:hover { color: #a32d2d; }
+</style>
+</head>
+<body>
+
+<h1>🧪 Чекбокс для тестов</h1>
+
+<div class="stats">
+  Пройдено: <strong class="passed-val" id="s-passed">0</strong>
+  &nbsp;|&nbsp;
+  Не пройдено: <strong class="failed-val" id="s-failed">0</strong>
+  &nbsp;|&nbsp;
+  Всего: <strong id="s-total">0</strong>
+</div>
+
+<div class="actions">
+  <button id="btn-add">➕ Добавить тест</button>
+  <button id="btn-reset">♻️ Сбросить все</button>
+  <button id="btn-export">📋 Копировать отчёт</button>
+</div>
+
+<div class="add-form" id="add-form">
+  <input type="text" id="new-name" placeholder="Название теста" />
+  <button id="btn-confirm">Добавить</button>
+  <button id="btn-cancel">Отмена</button>
+</div>
+
+<table>
+  <thead>
+    <tr><th>#</th><th>Тест</th><th>Результат</th><th></th></tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+
+<script>
+(function () {
+  const KEY = 'qa_tests_v3';
+
+  const DEFAULT_TESTS = [
+    "1.1 Логин с корректными данными → редирект на /boards/",
+    "1.2 Неверные данные → сообщение об ошибке",
+    "1.3 Пустые поля → ошибка валидации",
+    "2.1.1 Admin – видит все доски",
+    "2.1.2 Chief (Главный специалист) – видит все доски",
+    "2.1.3 Lead (Ведущий специалист) – видит все доски",
+    "2.1.4 Specialist (Специалист) – видит только публичные + свои доски",
+    "2.1.5 Senior (Старший специалист) – видит только публичные + свои доски",
+    "2.1.6 Junior (Младший специалист) – видит только публичные + свои доски",
+    "2.2.1 Admin – может редактировать любую доску",
+    "2.2.2 Chief (ГС) – может редактировать любую доску",
+    "2.2.3 Lead (ВС) – не может редактировать чужую доску",
+    "2.2.4 Specialist – не может редактировать чужую доску",
+    "2.2.5 Senior – не может редактировать чужую доску",
+    "2.2.6 Junior – не может редактировать чужую доску",
+    "3.1 Создание доски – все поля сохраняются",
+    "3.2 Редактирование доски – доступно создателю",
+    "3.3 Настройки приватности: публичная – видят все могут зайти как зрители",
+    "3.4 Настройки приватности: приватная – видят только участники",
+    "3.5 Чекбокс «Может просматривать любой» – любой может зайти как зритель",
+    "3.6 Чекбокс «Может просматривать любой» выключен – без прав доступа ошибка",
+    "4.1 Создание задачи – отображается в колонке",
+    "4.2 Перемещение задачи между колонками (drag & drop)",
+    "4.3 При указании дедлайна – корректное отображение (сегодня, через 2 дня, просрочено)",
+    "5.1 Комментарии – создание и @упоминания",
+    "6.1 Управление участниками доски (добавление/удаление/роли)",
+    "6.2 Права доступа участников: создание доски, редактирование доступа",
+    "7.1 Оргструктура – отображение дерева",
+    "8.1 Дашборд внутри доски – корректная статистика по текущей доске",
+    "8.2 Глобальный дашборд – корректная статистика по всем доскам",
+    "9.1 Настройки темы – сохраняются локально",
+    "10.1 Чат доски – отправка и ответы",
+    "11.1 Уведомления: по нажатию на уведомление о задаче – редирект на задачу",
+    "11.2 Уведомления: счётчик непрочитанных обновляется",
+    "12.1 Авторизация → редирект на /boards/",
+    "12.2 Выход → очистка токена, редирект на логин",
+    "13.1 При несуществующем ID доски (404) – редирект на /boards/ с ошибкой",
+    "13.2 При отсутствии прав на доску – ошибка доступа, редирект на /boards/"
+  ];
+
+  let tests = [];
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length) { tests = parsed; return; }
+      }
+    } catch (e) {}
+    tests = DEFAULT_TESTS.map(name => ({ name, status: null }));
+  }
+
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(tests)); } catch (e) {}
+  }
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function render() {
+    const tbody   = document.getElementById('tbody');
+    const sPassed = document.getElementById('s-passed');
+    const sFailed = document.getElementById('s-failed');
+    const sTotal  = document.getElementById('s-total');
+    if (!tbody || !sPassed || !sFailed || !sTotal) return;
+
+    const passed = tests.filter(t => t.status === 'passed').length;
+    const failed = tests.filter(t => t.status === 'failed').length;
+    sPassed.textContent = passed;
+    sFailed.textContent = failed;
+    sTotal.textContent  = tests.length;
+
+    tbody.innerHTML = tests.map((t, i) => {
+      const rc = t.status === 'passed' ? 'passed' : t.status === 'failed' ? 'failed' : '';
+      const pa = t.status === 'passed' ? 'active' : '';
+      const fa = t.status === 'failed' ? 'active' : '';
+      return `<tr class="${rc}" data-i="${i}">
+        <td>${i + 1}</td>
+        <td>${esc(t.name)}</td>
+        <td>
+          <button class="st-btn ${pa}" data-action="pass"  title="Пройден">✅</button>
+          <button class="st-btn ${fa}" data-action="fail"  title="Не пройден">❌</button>
+          <button class="st-btn"       data-action="clear" title="Сбросить">◯</button>
+        </td>
+        <td><button class="del-btn" data-action="del" title="Удалить">✕</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function setStatus(i, s) {
+    if (i < 0 || i >= tests.length) return;
+    tests[i].status = s;
+    save();
+    render();
+  }
+
+  function del(i) {
+    if (i < 0 || i >= tests.length) return;
+    if (!confirm(`Удалить тест "${tests[i].name}"?`)) return;
+    tests.splice(i, 1);
+    save();
+    render();
+  }
+
+  function addTest() {
+    const input = document.getElementById('new-name');
+    const name  = (input.value || '').trim();
+    if (!name) return;
+    tests.push({ name, status: null });
+    save();
+    render();
+    input.value = '';
+    document.getElementById('add-form').classList.remove('open');
+  }
+
+  document.getElementById('tbody').addEventListener('click', function (e) {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const row = btn.closest('tr[data-i]');
+    if (!row) return;
+    const i = parseInt(row.dataset.i, 10);
+    if (isNaN(i)) return;
+    const action = btn.dataset.action;
+    if      (action === 'pass')  setStatus(i, 'passed');
+    else if (action === 'fail')  setStatus(i, 'failed');
+    else if (action === 'clear') setStatus(i, null);
+    else if (action === 'del')   del(i);
+  });
+
+  document.getElementById('btn-add').onclick     = () => document.getElementById('add-form').classList.add('open');
+  document.getElementById('btn-cancel').onclick  = () => document.getElementById('add-form').classList.remove('open');
+  document.getElementById('btn-confirm').onclick = addTest;
+  document.getElementById('new-name').addEventListener('keypress', e => { if (e.key === 'Enter') addTest(); });
+
+  document.getElementById('btn-reset').onclick = function () {
+    if (!confirm('Сбросить все отметки?')) return;
+    tests.forEach(t => t.status = null);
+    save();
+    render();
+  };
+
+  document.getElementById('btn-export').onclick = function () {
+    const passed = tests.filter(t => t.status === 'passed').length;
+    const failed = tests.filter(t => t.status === 'failed').length;
+    let text = 'QA ОТЧЁТ\nДата: ' + new Date().toLocaleString() + '\n';
+    text += 'Пройдено: ' + passed + '\nНе пройдено: ' + failed + '\n\n';
+    tests.forEach(t => {
+      const icon = t.status === 'passed' ? '[OK]' : t.status === 'failed' ? '[X]' : '[ ]';
+      text += icon + ' ' + t.name + '\n';
+    });
+    navigator.clipboard.writeText(text)
+      .then(() => alert('Отчёт скопирован!'))
+      .catch(() => alert('Не удалось скопировать'));
+  };
+
+  load();
+  render();
+})();
+</script>
+</body>
+</html>

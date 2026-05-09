@@ -103,30 +103,51 @@ class BoardSerializer(serializers.ModelSerializer):
                   'memberships', 'participant_ids', 'viewer_ids']
         read_only_fields = ['id', 'creator', 'created_at', 'memberships']
 
+    def _sync_memberships(self, board, participant_ids=None, viewer_ids=None):
+        creator_id = board.creator_id
+
+        if participant_ids is not None:
+            participant_ids = [user_id for user_id in participant_ids if user_id != creator_id]
+            board.memberships.filter(role='editor').exclude(user_id__in=participant_ids).delete()
+            for user in User.objects.filter(id__in=participant_ids).exclude(id=creator_id):
+                membership, created = BoardMembership.objects.update_or_create(
+                    board=board,
+                    user=user,
+                    defaults={'role': 'editor'},
+                )
+                if created and user.role in ['admin', 'chief', 'lead']:
+                    membership.view_all_tasks = True
+                    membership.edit_columns = True
+                    membership.reorder_columns = True
+                    membership.save(update_fields=['view_all_tasks', 'edit_columns', 'reorder_columns'])
+
+        if viewer_ids is not None:
+            viewer_ids = [user_id for user_id in viewer_ids if user_id != creator_id]
+            board.memberships.filter(role='viewer').exclude(user_id__in=viewer_ids).delete()
+            for user in User.objects.filter(id__in=viewer_ids).exclude(id=creator_id):
+                membership, created = BoardMembership.objects.update_or_create(
+                    board=board,
+                    user=user,
+                    defaults={'role': 'viewer'},
+                )
+                if created and user.role in ['admin', 'chief', 'lead']:
+                    membership.view_all_tasks = True
+                    membership.edit_columns = True
+                    membership.reorder_columns = True
+                    membership.save(update_fields=['view_all_tasks', 'edit_columns', 'reorder_columns'])
+
     def create(self, validated_data):
         participant_ids = validated_data.pop('participant_ids', [])
         viewer_ids = validated_data.pop('viewer_ids', [])
         board = Board.objects.create(**validated_data)
-        if participant_ids:
-            for user in User.objects.filter(id__in=participant_ids):
-                BoardMembership.objects.create(board=board, user=user, role='editor')
-        if viewer_ids:
-            for user in User.objects.filter(id__in=viewer_ids):
-                BoardMembership.objects.create(board=board, user=user, role='viewer')
+        self._sync_memberships(board, participant_ids=participant_ids, viewer_ids=viewer_ids)
         return board
 
     def update(self, instance, validated_data):
         participant_ids = validated_data.pop('participant_ids', None)
         viewer_ids = validated_data.pop('viewer_ids', None)
         board = super().update(instance, validated_data)
-        if participant_ids is not None:
-            instance.memberships.filter(role='editor').exclude(user__id__in=participant_ids).delete()
-            for user in User.objects.filter(id__in=participant_ids):
-                BoardMembership.objects.update_or_create(board=instance, user=user, defaults={'role':'editor'})
-        if viewer_ids is not None:
-            instance.memberships.filter(role='viewer').exclude(user__id__in=viewer_ids).delete()
-            for user in User.objects.filter(id__in=viewer_ids):
-                BoardMembership.objects.update_or_create(board=instance, user=user, defaults={'role':'viewer'})
+        self._sync_memberships(board, participant_ids=participant_ids, viewer_ids=viewer_ids)
         return board
 
 
@@ -192,6 +213,26 @@ class TaskSerializer(serializers.ModelSerializer):
 
     def get_comments_count(self, obj):
         return obj.comments.count()
+
+    def validate_assigned_to_ids(self, value):
+        column = self.initial_data.get('column')
+        if column is None and self.instance is not None:
+            column = self.instance.column_id
+        if not column:
+            return value
+
+        try:
+            board_id = Column.objects.only('board_id').get(id=column).board_id
+        except Column.DoesNotExist:
+            raise serializers.ValidationError('Колонка не найдена')
+
+        allowed_ids = set(
+            BoardMembership.objects.filter(board_id=board_id, role='editor').values_list('user_id', flat=True)
+        )
+        invalid_ids = [user_id for user_id in value if user_id not in allowed_ids]
+        if invalid_ids:
+            raise serializers.ValidationError('Исполнителями могут быть только редакторы этой доски')
+        return value
 
     def create(self, validated_data):
         assigned_ids = validated_data.pop('assigned_to_ids', [])

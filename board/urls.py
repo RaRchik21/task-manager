@@ -20,4 +20,5 @@ urlpatterns = [
     path('create-test-users/', create_test_users),
     path('migrate/', migrate_db),
     path('create-admin/', create_admin),
+    
 ]

@@ -1,9 +1,9 @@
-from django.db.models import Q
+from django.db.models import Q, Count
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
-from rest_framework.permissions import BasePermission, IsAuthenticated
+from rest_framework.permissions import BasePermission, IsAuthenticated, AllowAny
 from .models import User, Column, Task, BoardSettings, Board, BoardMembership, BoardChatMessage, Notification, TaskComment
 from .serializers import (UserSerializer, UserCreateSerializer,
                           ColumnSerializer, TaskSerializer, BoardSettingsSerializer, BoardSerializer, BoardMembershipSerializer, BoardChatMessageSerializer,
@@ -17,6 +17,7 @@ from .serializers import (UserSerializer, UserCreateSerializer,
 
 from django.contrib.auth import get_user_model
 from django.http import JsonResponse
+from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 
 User = get_user_model()
@@ -76,14 +77,22 @@ class IsAdmin(BasePermission):
 
 class CanCreateColumn(BasePermission):
     def has_permission(self, request, view):
-        if request.user.role in ['admin', 'chief']:
+        if request.user.role in ['admin', 'chief', 'lead']:
             return True
-        # Проверяем права на доске
         board_id = request.data.get('board') or request.query_params.get('board')
+        if not board_id and hasattr(view, 'get_object'):
+            try:
+                obj = view.get_object()
+                board_id = getattr(obj, 'board_id', None)
+            except Exception:
+                board_id = None
         if board_id:
+            # Создатель доски всегда может создавать колонки
+            if Board.objects.filter(id=board_id, creator=request.user).exists():
+                return True
             try:
                 membership = BoardMembership.objects.get(board_id=board_id, user=request.user)
-                return membership.edit_columns
+                return membership.role in ['admin', 'editor'] or membership.edit_columns
             except BoardMembership.DoesNotExist:
                 pass
         return False
@@ -92,12 +101,19 @@ class CanEditColumn(BasePermission):
     def has_permission(self, request, view):
         if request.user.role in ['admin', 'chief', 'lead']:
             return True
-        # Проверяем права на доске
         board_id = request.data.get('board') or request.query_params.get('board')
+        if not board_id and hasattr(view, 'get_object'):
+            try:
+                obj = view.get_object()
+                board_id = getattr(obj, 'board_id', None)
+            except Exception:
+                board_id = None
         if board_id:
+            if Board.objects.filter(id=board_id, creator=request.user).exists():
+                return True
             try:
                 membership = BoardMembership.objects.get(board_id=board_id, user=request.user)
-                return membership.edit_columns
+                return membership.role in ['admin', 'editor'] or membership.edit_columns
             except BoardMembership.DoesNotExist:
                 pass
         return False
@@ -106,9 +122,39 @@ class CanSeeAllTasks(BasePermission):
     def has_permission(self, request, view):
         return request.user.role in ['admin', 'chief', 'lead']
 
+
+class CanRenameSystemName(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.role in ['admin', 'chief', 'lead']
+
 ROLE_HIERARCHY = {
     'admin': 6, 'chief': 5, 'lead': 4, 'specialist': 3, 'senior': 2, 'junior': 1,
 }
+
+BOARD_ROLE_DEFAULTS = {
+    'admin': {'view_all_tasks': True, 'edit_columns': True, 'reorder_columns': True},
+    'chief': {'view_all_tasks': True, 'edit_columns': True, 'reorder_columns': True},
+    'lead': {'view_all_tasks': True, 'edit_columns': True, 'reorder_columns': True},
+    'specialist': {'view_all_tasks': False, 'edit_columns': False, 'reorder_columns': False},
+    'senior': {'view_all_tasks': False, 'edit_columns': False, 'reorder_columns': False},
+    'junior': {'view_all_tasks': False, 'edit_columns': False, 'reorder_columns': False},
+}
+
+
+def get_default_board_permissions(user):
+    return BOARD_ROLE_DEFAULTS.get(user.role, {
+        'view_all_tasks': False,
+        'edit_columns': False,
+        'reorder_columns': False,
+    }).copy()
+
+
+def apply_default_board_permissions(membership):
+    defaults = get_default_board_permissions(membership.user)
+    membership.view_all_tasks = defaults['view_all_tasks']
+    membership.edit_columns = defaults['edit_columns']
+    membership.reorder_columns = defaults['reorder_columns']
+    membership.save(update_fields=['view_all_tasks', 'edit_columns', 'reorder_columns'])
 
 class CanManageUsers(BasePermission):
     def has_permission(self, request, view):
@@ -133,6 +179,8 @@ class UserViewSet(viewsets.ModelViewSet):
             return [IsAuthenticated(), CanManageUsers()]
         if self.action == 'destroy':
             return [IsAuthenticated(), IsAdmin()]
+        if self.action == 'all_for_board':
+            return [IsAuthenticated()]
         return [IsAuthenticated()]
     
     def get_serializer_class(self):
@@ -182,6 +230,13 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = UserSerializer(result, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['get'])
+    def all_for_board(self, request):
+        """Все пользователи для добавления в доску"""
+        return Response(UserShortSerializer(
+            User.objects.exclude(role='admin'), many=True
+        ).data)
+
 
 # ═══════════════════════════════
 #           КОЛОНКИ
@@ -205,7 +260,8 @@ class ColumnViewSet(viewsets.ModelViewSet):
             if self.request.user.role not in ['admin', 'chief', 'lead']:
                 accessible = Board.objects.filter(id=board_id, is_archived=False).filter(
                     Q(privacy='public', allow_anyone_view=True) |
-                    Q(memberships__user=self.request.user)
+                    Q(memberships__user=self.request.user) |
+                    Q(creator=self.request.user)
                 ).exists()
                 if not accessible:
                     return Column.objects.none()
@@ -246,7 +302,8 @@ class BoardViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         board = serializer.save(creator=self.request.user)
-        BoardMembership.objects.create(board=board, user=self.request.user, role='admin')
+        membership = BoardMembership.objects.create(board=board, user=self.request.user, role='admin')
+        apply_default_board_permissions(membership)
 
     def destroy(self, request, *args, **kwargs):
         board = self.get_object()
@@ -275,6 +332,9 @@ class BoardViewSet(viewsets.ModelViewSet):
         except User.DoesNotExist:
             return Response({'error': 'Пользователь не найден'}, status=404)
         membership, created = BoardMembership.objects.get_or_create(board=board, user=user)
+        if created:
+            apply_default_board_permissions(membership)
+            membership.refresh_from_db()
         if role is not None:
             membership.role = role
         if view_all_tasks is not None:
@@ -300,10 +360,72 @@ class BoardViewSet(viewsets.ModelViewSet):
             user = User.objects.get(id=user_id)
         except User.DoesNotExist:
             return Response({'error': 'Пользователь не найден'}, status=404)
-        membership, _ = BoardMembership.objects.get_or_create(board=board, user=user)
+        membership, created = BoardMembership.objects.get_or_create(board=board, user=user)
+        if created:
+            apply_default_board_permissions(membership)
+            membership.refresh_from_db()
         membership.role = role
         membership.save()
         return Response({'status': 'ok'})
+
+    @action(detail=False, methods=['get'])
+    def dashboard_overview(self, request):
+        if request.user.role not in ['admin', 'chief', 'lead']:
+            return Response({'error': 'Недостаточно прав'}, status=403)
+
+        from django.utils import timezone
+        from datetime import timedelta
+
+        boards = self.get_queryset().prefetch_related('memberships')
+        tasks = Task.objects.filter(column__board__in=boards).select_related('column__board', 'created_by')
+
+        by_board = list(
+            tasks.filter(is_archived=False)
+            .values('column__board__id', 'column__board__name')
+            .annotate(count=Count('id'))
+            .order_by('-count')[:6]
+        )
+
+        board_members = list(
+            boards.values('id', 'name')
+            .annotate(count=Count('memberships'))
+            .order_by('-count')[:6]
+        )
+
+        by_creator = list(
+            boards.values('creator__username', 'creator__first_name', 'creator__last_name')
+            .annotate(count=Count('id'))
+            .order_by('-count')[:5]
+        )
+
+        today = timezone.now().date()
+        activity = []
+        for i in range(6, -1, -1):
+            day = today - timedelta(days=i)
+            count = tasks.filter(created_at__date=day).count()
+            activity.append({'date': str(day), 'count': count})
+
+        active_tasks = tasks.filter(is_archived=False)
+        avg_tasks_per_board = round(active_tasks.count() / max(boards.count(), 1), 1)
+        avg_members_per_board = round(
+            sum(board.memberships.count() for board in boards) / max(boards.count(), 1), 1
+        )
+
+        return Response({
+            'boards_total': boards.count(),
+            'public_boards': boards.filter(privacy='public').count(),
+            'private_boards': boards.filter(privacy='private').count(),
+            'active_tasks': active_tasks.count(),
+            'archived_tasks': tasks.filter(is_archived=True).count(),
+            'overdue_tasks': active_tasks.filter(deadline__lt=today).count(),
+            'avg_tasks_per_board': avg_tasks_per_board,
+            'avg_members_per_board': avg_members_per_board,
+            'boards_with_open_access': boards.filter(allow_anyone_view=True).count(),
+            'activity': activity,
+            'top_boards': by_board,
+            'top_membership_boards': board_members,
+            'top_creators': by_creator,
+        })
 
     @action(detail=True, methods=['post'])
     def remove_member(self, request, pk=None):
@@ -370,9 +492,11 @@ class TaskViewSet(viewsets.ModelViewSet):
         # Проверяем, имеет ли пользователь право видеть все задачи на доске
         can_view_all = False
         if board_id:
+            if Board.objects.filter(id=board_id, creator=user).exists():
+                can_view_all = True
             try:
                 membership = BoardMembership.objects.get(board_id=board_id, user=user)
-                can_view_all = membership.view_all_tasks
+                can_view_all = can_view_all or membership.view_all_tasks
             except BoardMembership.DoesNotExist:
                 pass
 
@@ -380,15 +504,20 @@ class TaskViewSet(viewsets.ModelViewSet):
             qs = Task.objects.all().select_related('created_by', 'column')
         elif user.role == 'specialist':
             junior_ids = user.juniors.values_list('id', flat=True)
-            qs = Task.objects.filter(created_by__in=[user.id, *junior_ids]).select_related('created_by', 'column')
+            qs = Task.objects.filter(
+                Q(created_by__in=[user.id, *junior_ids]) | Q(assigned_to=user)
+            ).distinct().select_related('created_by', 'column')
         else:
-            qs = Task.objects.filter(created_by=user).select_related('created_by', 'column')
+            qs = Task.objects.filter(
+                Q(created_by=user) | Q(assigned_to=user)
+            ).distinct().select_related('created_by', 'column')
 
         if board_id:
             if user.role not in ['admin', 'chief', 'lead']:
                 accessible = Board.objects.filter(id=board_id, is_archived=False).filter(
                     Q(privacy='public', allow_anyone_view=True) |
-                    Q(memberships__user=user)
+                    Q(memberships__user=user) |
+                    Q(creator=user)
                 ).exists()
                 if not accessible:
                     return Task.objects.none()
@@ -447,9 +576,13 @@ class TaskViewSet(viewsets.ModelViewSet):
             qs = Task.objects.all()
         elif user.role == 'specialist':
             junior_ids = user.juniors.values_list('id', flat=True)
-            qs = Task.objects.filter(created_by__in=[user.id, *junior_ids])
+            qs = Task.objects.filter(
+                Q(created_by__in=[user.id, *junior_ids]) | Q(assigned_to=user)
+            ).distinct()
         else:
-            qs = Task.objects.filter(created_by=user)
+            qs = Task.objects.filter(
+                Q(created_by=user) | Q(assigned_to=user)
+            ).distinct()
 
         if board_id:
             qs = qs.filter(column__board_id=board_id)
@@ -516,6 +649,10 @@ class BoardSettingsViewSet(viewsets.ModelViewSet):
     serializer_class = BoardSettingsSerializer
 
     def get_permissions(self):
+        if self.action == 'current':
+            return [AllowAny()]
+        if self.action == 'update_system_name':
+            return [IsAuthenticated(), CanRenameSystemName()]
         if self.request.method in ['POST', 'PUT', 'PATCH']:
             return [IsAuthenticated(), CanManageUsers()]
         return [IsAuthenticated()]
@@ -536,6 +673,15 @@ class BoardSettingsViewSet(viewsets.ModelViewSet):
     def update_settings(self, request):
         obj, _ = BoardSettings.objects.get_or_create(id=1)
         serializer = BoardSettingsSerializer(obj, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+    @action(detail=False, methods=['patch'], permission_classes=[IsAuthenticated, CanRenameSystemName])
+    def update_system_name(self, request):
+        obj, _ = BoardSettings.objects.get_or_create(id=1)
+        serializer = BoardSettingsSerializer(obj, data={'system_name': request.data.get('system_name')}, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -601,3 +747,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
         notif.is_read = True
         notif.save()
         return Response({'status': 'ok'})
+
+
+def custom_404(request, exception):
+    return render(request, '404.html', status=404)

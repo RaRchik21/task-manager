@@ -305,7 +305,7 @@
         <span class="search-icon">🔍</span>
         <input class="search-input" id="searchInput" placeholder="Найти задачу..." oninput="renderBoard(allColumns, allTasks)" />
       </div>
-      <button class="header-btn" onclick="toggleBoardChat()">💬 Чат</button>
+      <button class="header-btn" onclick="toggleBoardChat()" style="position:relative;">💬 Чат<span class="notif-badge" id="chatHeaderBadge">0</span></button>
       <a class="header-btn" href="/boards/" style="text-decoration:none;">Все доски</a>
     </div>
     <div class="header-right">
@@ -523,6 +523,10 @@
 
 
 
+  // Перенаправление с /main/ на /boards/, если нет параметра board
+if (window.location.pathname === '/main/' && !window.location.search.includes('board')) {
+    window.location.href = '/boards/';
+}
   
   // ══════════════════════════════════════
   //            АВТОРИЗАЦИЯ
@@ -562,12 +566,41 @@
   }
 
   function authHeaders() { return {'Content-Type':'application/json','Accept':'application/json','Authorization':`Bearer ${token}`}; }
-  function canManage() { return ['admin','chief','lead'].includes(currentUser?.role) || currentBoardMembership?.role === 'admin'; }
-  function canCreateColumn() { return ['admin','chief'].includes(currentUser?.role) || currentBoardMembership?.edit_columns; }
-  function canReorderColumns() { return ['admin','chief'].includes(currentUser?.role) || currentBoardMembership?.reorder_columns; }
-  function canViewAllTasks() { return ['admin','chief','lead'].includes(currentUser?.role) || currentBoardMembership?.view_all_tasks; }
+  function currentBoardIsCreator() {
+    const currentBoard = allBoards.find(board => Number(board.id) === Number(currentBoardId));
+    return Number(currentBoard?.creator) === Number(currentUser?.id);
+  }
+  function canRenameSystem() { return ['admin','chief','lead'].includes(currentUser?.role); }
+  function canOpenBoardsDashboard() { return ['admin','chief','lead'].includes(currentUser?.role); }
+  function canManage() { return ['admin','chief','lead'].includes(currentUser?.role) || currentBoardMembership?.role === 'admin' || currentBoardIsCreator(); }
+  function canCreateColumn() { return ['admin','chief','lead'].includes(currentUser?.role) || currentBoardMembership?.edit_columns || currentBoardIsCreator(); }
+  function canReorderColumns() { return ['admin','chief','lead'].includes(currentUser?.role) || currentBoardMembership?.reorder_columns || currentBoardIsCreator(); }
+  function canViewAllTasks() { return ['admin','chief','lead'].includes(currentUser?.role) || currentBoardMembership?.view_all_tasks || currentBoardIsCreator(); }
   function canChangeRoles() { return ['admin','chief','lead'].includes(currentUser?.role); }
   function isSpecialist() { return currentUser?.role === 'specialist'; }
+  function refreshBoardControls() {
+    const btnAddColumn = document.getElementById('btnAddColumn');
+    if (btnAddColumn) btnAddColumn.style.display = canCreateColumn() ? 'block' : 'none';
+
+    const settingsToggle = document.getElementById('settingsToggle');
+    if (settingsToggle) settingsToggle.style.display = 'block';
+
+
+    const filterAll = document.getElementById('filterAll');
+    if (filterAll) {
+      filterAll.style.display = canViewAllTasks() ? 'inline-block' : 'none';
+      if (currentFilter === 'all' && !canViewAllTasks()) {
+        currentFilter = 'my';
+        filterAll.classList.remove('active');
+        document.getElementById('filterMy')?.classList.add('active');
+      }
+    }
+
+    const systemNameSection = document.getElementById('systemNameSection');
+    if (systemNameSection) {
+      systemNameSection.style.display = canRenameSystem() ? 'block' : 'none';
+    }
+  }
 
   // ══════════════════════════════════════
   //              СТАРТ
@@ -577,18 +610,11 @@ async function showApp() {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     document.getElementById('userBadge').textContent = currentUser?.full_name || currentUser?.username || '';
+    refreshBoardControls();
     
-    const btnAddColumn = document.getElementById('btnAddColumn');
-    if (btnAddColumn) btnAddColumn.style.display = canCreateColumn() ? 'block' : 'none';
-    
-    const settingsToggle = document.getElementById('settingsToggle');
-    if (settingsToggle) settingsToggle.style.display = canManage() ? 'block' : 'none';
     
     // Кнопки btnUsers и btnOrgChart удалены — убираем обращения
-    const btnStats = document.getElementById('btnStats');
-    if (btnStats) btnStats.style.display = canManage() ? 'block' : 'none';
     
-    const canSeeOrgChart = ['admin','chief','lead','specialist'].includes(currentUser?.role);
     // Кнопка структуры теперь на странице boards.html, здесь не нужна
     // document.getElementById('btnOrgChart').style.display = canSeeOrgChart ? 'block' : 'none';
 
@@ -597,10 +623,10 @@ async function showApp() {
         if (filterBar) filterBar.classList.add('visible');
         await loadFilterUsers();
     }
-    document.getElementById('filterAll').style.display = canViewAllTasks() ? 'inline-block' : 'none';
 
 
     await loadBoards();
+    refreshBoardControls();
     if (!currentBoardId && allBoards.length) {
         currentBoardId = allBoards[0].id;
         localStorage.setItem('currentBoardId', currentBoardId);
@@ -628,7 +654,7 @@ async function showApp() {
 }
 
   async function loadAllUsers() {
-    const res = await fetch(`${API}/users/`, { headers: authHeaders() });
+    const res = await fetch(`${API}/users/all_for_board/`, { headers: authHeaders() });
     const data = await res.json();
     allUsers = data.results || data;
   }
@@ -653,7 +679,9 @@ async function loadBoards() {
   function changeBoard(boardId) {
     if (!boardId) return;
     currentBoardId = parseInt(boardId);
+    currentBoardMembership = null;
     localStorage.setItem('currentBoardId', currentBoardId);
+    refreshBoardControls();
     loadBoard();
     loadBoardChat();
   }
@@ -781,6 +809,7 @@ async function loadBoards() {
       } else {
         currentBoardMembership = null;
       }
+      refreshBoardControls();
       if (!Array.isArray(allColumns)) return;
       renderBoard(allColumns, allTasks);
       updateStats();
@@ -1122,7 +1151,7 @@ async function saveTask() {
   function fillAssigneeSelect() {
     const select = document.getElementById('assigneeSelect');
     select.innerHTML = '<option value="">Выбрать пользователя...</option>';
-    allUsers.filter(u => u.id !== currentUser?.id && !selectedAssignees.find(a => a.id === u.id))
+    getAssignableUsers().filter(u => !selectedAssignees.find(a => a.id === u.id))
       .forEach(u => {
         const opt = document.createElement('option');
         opt.value = u.id; opt.textContent = u.full_name || u.username;
@@ -1132,7 +1161,7 @@ async function saveTask() {
 
   function addAssignee(userId) {
     if (!userId) return;
-    const user = allUsers.find(u => u.id === parseInt(userId));
+    const user = getAssignableUsers().find(u => u.id === parseInt(userId));
     if (!user || selectedAssignees.find(a => a.id === user.id)) return;
     selectedAssignees.push({id: user.id, name: user.full_name || user.username});
     renderAssigneesList(); fillAssigneeSelect();
@@ -1148,6 +1177,17 @@ async function saveTask() {
     document.getElementById('assigneesList').innerHTML = selectedAssignees.map(a =>
       `<div class="assignee-chip">${escHtml(a.name)}<button onclick="removeAssignee(${a.id})">×</button></div>`
     ).join('');
+  }
+
+  function getAssignableUsers() {
+    const currentBoard = allBoards.find(board => Number(board.id) === Number(currentBoardId));
+    const editorIds = new Set(
+      (currentBoard?.memberships || [])
+        .filter(member => member.role === 'editor')
+        .map(member => member.user?.id || member.user)
+        .filter(Boolean)
+    );
+    return allUsers.filter(user => editorIds.has(user.id));
   }
 
   function renderCommentItem(comment, depth = 0) {
@@ -1451,16 +1491,17 @@ async function openStats() {
     const panel = document.getElementById('usersPanel');
     panel.classList.toggle('open');
     if (!panel.classList.contains('open')) return;
-    const res = await fetch(`${API}/users/`, {headers: authHeaders()});
+    const res = await fetch(`${API}/users/all_for_board/`, {headers: authHeaders()});
     const data = await res.json(); const users = data.results||data;
-    const roles = {lead:'Ведущий специалист',specialist:'Специалист',senior:'Старший специалист',junior:'Младший специалист'};
+    const roles = {chief:'Главный специалист',lead:'Ведущий специалист',specialist:'Специалист',senior:'Старший специалист',junior:'Младший специалист'};
     document.getElementById('usersList').innerHTML = users.map(u => {
       const initials = ((u.first_name||'')[0]||(u.username||'')[0]||'?').toUpperCase()+((u.last_name||'')[0]||'').toUpperCase();
       const canEdit = canChangeRoles() && ROLE_HIERARCHY[currentUser?.role] > ROLE_HIERARCHY[u.role];
+      const availableRoles = Object.entries(roles).filter(([value]) => ROLE_HIERARCHY[currentUser?.role] > ROLE_HIERARCHY[value]);
       return `<div class="user-card">
         <div class="user-avatar">${initials}</div>
         <div class="user-info"><div class="user-name">${u.full_name||u.username}</div><div class="user-meta">${roles[u.role]||u.role}${u.telegram_username?' · @'+u.telegram_username:''}</div></div>
-        ${canEdit?`<select class="role-select" onchange="changeRole(${u.id},this.value)">${Object.entries(roles).map(([v,l])=>`<option value="${v}"${u.role===v?' selected':''}>${l}</option>`).join('')}</select>`:`<span style="font-size:12px;color:#888780;">${roles[u.role]||u.role}</span>`}
+        ${canEdit?`<select class="role-select" onchange="changeRole(${u.id},this.value)">${availableRoles.map(([v,l])=>`<option value="${v}"${u.role===v?' selected':''}>${l}</option>`).join('')}</select>`:`<span style="font-size:12px;color:#888780;">${roles[u.role]||u.role}</span>`}
       </div>`;
     }).join('');
   }
@@ -1470,9 +1511,10 @@ async function openStats() {
   }
 
   async function saveSystemName() {
+    if (!canRenameSystem()) return;
     const name = document.getElementById('systemNameInput').value.trim();
     if (!name) return;
-    await fetch(`${API}/board-settings/update_settings/`, {method:'PATCH', headers: authHeaders(), body: JSON.stringify({system_name:name})});
+    await fetch(`${API}/board-settings/update_system_name/`, {method:'PATCH', headers: authHeaders(), body: JSON.stringify({system_name:name})});
     document.getElementById('systemName').textContent = name;
     document.getElementById('loginTitle').textContent = name;
     document.title = name;
@@ -1587,7 +1629,6 @@ async function openStats() {
     saveTheme({...t}); applyColors({...t});
     document.querySelectorAll('.theme-swatch').forEach(s=>s.classList.remove('active'));
     document.querySelector(`[data-theme="${name}"]`)?.classList.add('active');
-    if (canManage()) await fetch(`${API}/board-settings/update_settings/`,{method:'PATCH',headers:authHeaders(),body:JSON.stringify({bg_gradient:t.grad,bg_color1:t.g1,bg_color2:t.g2,bg_angle:t.angle,header_color:t.header,card_color:t.card})});
   }
 
   async function applyGradient() {
@@ -1596,18 +1637,15 @@ async function openStats() {
     document.body.style.background=grad;
     const c=JSON.parse(localStorage.getItem('boardTheme')||'{}'); c.grad=grad; c.g1=g1; c.g2=g2; c.angle=parseInt(angle); saveTheme(c);
     document.querySelectorAll('.theme-swatch').forEach(s=>s.classList.remove('active'));
-    if (canManage()) await fetch(`${API}/board-settings/update_settings/`,{method:'PATCH',headers:authHeaders(),body:JSON.stringify({bg_gradient:grad,bg_color1:g1,bg_color2:g2,bg_angle:parseInt(angle)})});
   }
 
   async function applyCustomColor(type, value) {
     const c=JSON.parse(localStorage.getItem('boardTheme')||'{}'); c[type]=value; saveTheme(c); applyColors(c);
-    if (canManage()) { const payload=type==='header'?{header_color:value}:{card_color:value}; await fetch(`${API}/board-settings/update_settings/`,{method:'PATCH',headers:authHeaders(),body:JSON.stringify(payload)}); }
   }
 
   async function applyOpacity(type, value) {
     document.getElementById(`opacity${type}Val`).textContent=value+'%';
     const c=JSON.parse(localStorage.getItem('boardTheme')||'{}'); c[`opacity${type}`]=parseInt(value); saveTheme(c); renderBoard(allColumns,allTasks);
-    if (canManage()) await fetch(`${API}/board-settings/update_settings/`,{method:'PATCH',headers:authHeaders(),body:JSON.stringify({[`bg_opacity_${type.toLowerCase()}`]:parseInt(value)})});
   }
 
   function applyColors(t) {
@@ -1658,9 +1696,33 @@ async function openStats() {
 
 let lastChatOpenTime = null;
 
+function setChatUnreadBadges(count) {
+    ['chatUnreadBadge', 'chatHeaderBadge'].forEach((id) => {
+        const badge = document.getElementById(id);
+        if (!badge) return;
+        if (count > 0) {
+            badge.textContent = count;
+            badge.style.display = 'inline-block';
+        } else {
+            badge.style.display = 'none';
+        }
+    });
+}
+
+function getStoredChatLastOpen(boardId) {
+    if (!boardId) return null;
+    const saved = localStorage.getItem(`chat_last_open_${boardId}`);
+    return saved ? new Date(saved) : null;
+}
+
 async function loadBoardChat() {
     if (!currentBoardId) return;
     const list = document.getElementById('boardChatList');
+    const panel = document.getElementById('boardChatPanel');
+    const isChatOpen = panel?.classList.contains('open');
+    if (!isChatOpen) {
+        lastChatOpenTime = getStoredChatLastOpen(currentBoardId);
+    }
     try {
         const res = await fetch(`${API}/board-chat/?board=${currentBoardId}`, { headers: authHeaders() });
         if (!res.ok) return;
@@ -1669,20 +1731,14 @@ async function loadBoardChat() {
         chatReplyMap = {};
         if (!messages.length) {
             list.innerHTML = '<div style="color:#888780;font-size:13px;">Чат пуст. Напишите первое сообщение.</div>';
+            setChatUnreadBadges(0);
             return;
         }
         // Подсчёт новых сообщений, если время последнего открытия сохранено
-        const now = new Date();
-        if (lastChatOpenTime) {
-            const newMessages = messages.filter(m => new Date(m.created_at) > lastChatOpenTime && m.author !== currentUser?.id);
-            const badge = document.getElementById('chatUnreadBadge');
-            if (newMessages.length) {
-                badge.textContent = newMessages.length;
-                badge.style.display = 'inline-block';
-            } else {
-                badge.style.display = 'none';
-            }
-        }
+        const newMessages = lastChatOpenTime
+            ? messages.filter(m => new Date(m.created_at) > lastChatOpenTime && m.author !== currentUser?.id)
+            : messages.filter(m => m.author !== currentUser?.id);
+        setChatUnreadBadges(isChatOpen ? 0 : newMessages.length);
         // Рендер сообщений без изменений
         list.innerHTML = '';
         messages.forEach(m => {
@@ -1697,10 +1753,14 @@ async function loadBoardChat() {
             `;
             list.appendChild(messageEl);
         });
-        list.scrollTop = list.scrollHeight;
+        if (isChatOpen) {
+            const now = new Date();
+            list.scrollTop = list.scrollHeight;
         // Обновляем время последнего просмотра
-        lastChatOpenTime = now;
-        localStorage.setItem(`chat_last_open_${currentBoardId}`, now.toISOString());
+            lastChatOpenTime = now;
+            localStorage.setItem(`chat_last_open_${currentBoardId}`, now.toISOString());
+            setChatUnreadBadges(0);
+        }
     } catch(e) { console.error(e); }
 }
 
@@ -1713,9 +1773,12 @@ function toggleBoardChat() {
             currentBoardId = allBoards[0].id;
             localStorage.setItem('currentBoardId', currentBoardId);
         }
-        const saved = localStorage.getItem(`chat_last_open_${currentBoardId}`);
-        lastChatOpenTime = saved ? new Date(saved) : null;
+        lastChatOpenTime = getStoredChatLastOpen(currentBoardId);
         loadBoardChat();
+    } else {
+        lastChatOpenTime = new Date();
+        localStorage.setItem(`chat_last_open_${currentBoardId}`, lastChatOpenTime.toISOString());
+        setChatUnreadBadges(0);
     }
 }
 
@@ -1787,8 +1850,17 @@ async function changeBoardMemberRole(boardId, userId, newRole) {
         showNotification('Ошибка сети', 'error');
     }
 }
+  function closeTopModalOnEscape() {
+    if (document.getElementById('taskModal')?.classList.contains('active')) return closeTaskModal();
+    if (document.getElementById('boardModal')?.classList.contains('active')) return closeBoardModal();
+    if (document.getElementById('columnModal')?.classList.contains('active')) return closeColumnModal();
+    if (document.getElementById('dashboardModal')?.classList.contains('active')) return closeDashboard();
+  }
 
-
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    closeTopModalOnEscape();
+  });
 
   if (token && currentUser) { showApp(); }
 
@@ -1802,10 +1874,10 @@ async function changeBoardMemberRole(boardId, userId, newRole) {
     <button class="panel-close" onclick="toggleSettings()">✕</button>
   </div>
   <div class="panel-body">
-    <div class="settings-section">
+    <div class="settings-section" id="systemNameSection">
       <label>Название системы</label>
       <input type="text" class="settings-input" id="systemNameInput" placeholder="Task Manager" />
-      <button class="btn-save-setting" onclick="saveSystemName()">Сохранить</button>
+      <button class="btn-save-setting" id="systemNameSaveButton" onclick="saveSystemName()">Сохранить</button>
     </div>
     <div class="settings-section">
       <label>Готовые темы</label>
