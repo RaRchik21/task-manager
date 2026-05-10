@@ -72,7 +72,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'task_manager.wsgi.application'
 
-g
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
