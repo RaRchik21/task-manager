@@ -337,17 +337,16 @@
     }
 
     // Можно ли зайти внутрь доски
-    function canEnterBoard(board) {
-      if (Number(board.creator) === Number(currentUser?.id)) return true; // создатель
-      if (isBoardMember(board)) return true;                               // участник
-      if (board.allow_anyone_view) return true;                            // открытый доступ
-      return false;
-    }
+function canEnterBoard(board) {
+  if (Number(board.creator) === Number(currentUser?.id)) return true;
+  if (isBoardMember(board)) return true;
+  if (board.privacy === 'public') return true; // убрали allow_anyone_view, теперь публичная = заходят все
+  return false;
+}
 
-    // Можно ли кликом по карточке открыть модалку участников
-    function canOpenMembersModal(board) {
-      return canEnterBoard(board) || Number(board.creator) === Number(currentUser?.id);
-    }
+function canOpenMembersModal(board) {
+  return canViewBoard(board); // видит доску — может кликнуть
+}
 
     // ─── Загрузка и рендер досок ────────────────────────────────────────────
 
@@ -439,16 +438,15 @@
 
     // ─── Форма создания/редактирования доски ────────────────────────────────
 
-    function clearBoardForm() {
-      document.getElementById('boardName').value = '';
-      document.getElementById('boardDescription').value = '';
-      document.getElementById('boardPrivacy').value = 'public';
-      document.getElementById('boardAllowAnyone').checked = true;
-      const participantSelect = document.getElementById('boardParticipants');
-      const viewerSelect = document.getElementById('boardViewers');
-      if (participantSelect) Array.from(participantSelect.options).forEach(o => o.selected = false);
-      if (viewerSelect) Array.from(viewerSelect.options).forEach(o => o.selected = false);
-    }
+function clearBoardForm() {
+  document.getElementById('boardName').value = '';
+  document.getElementById('boardDescription').value = '';
+  document.getElementById('boardPrivacy').value = 'public';
+  const participantSelect = document.getElementById('boardParticipants');
+  const viewerSelect = document.getElementById('boardViewers');
+  if (participantSelect) Array.from(participantSelect.options).forEach(o => o.selected = false);
+  if (viewerSelect) Array.from(viewerSelect.options).forEach(o => o.selected = false);
+}
 
     function openBoardModal() {
       editingBoardId = null;
@@ -469,7 +467,6 @@
       document.getElementById('boardName').value = board.name;
       document.getElementById('boardDescription').value = board.description || '';
       document.getElementById('boardPrivacy').value = board.privacy;
-      document.getElementById('boardAllowAnyone').checked = board.allow_anyone_view;
       const participantSelect = document.getElementById('boardParticipants');
       const viewerSelect = document.getElementById('boardViewers');
       const participantIds = board.memberships?.filter(m => m.role === 'editor').map(m => m.user?.id || m.user) || [];
