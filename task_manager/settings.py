@@ -72,17 +72,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'task_manager.wsgi.application'
 
+g
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'db_7lknj82cni0p',
-        'USER': 'db_7lknj82cni0p',
-        'PASSWORD': 'tK22bU2YKXpGLashRArBmU0V',
-        'HOST': 'up-de-fra1-mysql-2.db.run-on-seenode.com',
-        'PORT': '11550',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
