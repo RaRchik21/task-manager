@@ -105,10 +105,6 @@
         <option value="public">Публичная (видят все)</option>
         <option value="private">Приватная (только участники)</option>
       </select>
-      <div class="checkbox-row" style="margin-bottom:12px;">
-        <input type="checkbox" id="boardAllowAnyone" checked />
-        <label for="boardAllowAnyone">Может просматривать любой</label>
-      </div>
       <label>Участники (редакторы)</label>
       <select id="boardParticipants" multiple></select>
       <label>Зрители</label>
@@ -497,7 +493,7 @@
         name,
         description: document.getElementById('boardDescription').value.trim(),
         privacy: document.getElementById('boardPrivacy').value,
-        allow_anyone_view: document.getElementById('boardAllowAnyone').checked,
+        allow_anyone_view: true,
         participant_ids: Array.from(document.getElementById('boardParticipants').selectedOptions).map(o => parseInt(o.value)),
         viewer_ids: Array.from(document.getElementById('boardViewers').selectedOptions).map(o => parseInt(o.value))
       };
