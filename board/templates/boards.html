@@ -47,8 +47,6 @@
     .modal select option { padding: 8px; }
     .modal-buttons { display:flex; justify-content:flex-end; gap:12px; }
     .modal-cancel { background:none; border:1px solid rgba(211,209,199,0.9); padding:12px 18px; border-radius:14px; cursor:pointer; }
-
-    /* Стили для карточек пользователей (копия из index.html) */
     .user-card { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(211,209,199,0.3); transition: background 0.15s; }
     .user-card:hover { background: rgba(232,226,216,0.4); }
     .user-avatar { width: 38px; height: 38px; border-radius: 50%; background: rgba(211,209,199,0.8); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: #5F5E5A; flex-shrink: 0; }
@@ -56,8 +54,6 @@
     .user-name { font-size: 14px; font-weight: 500; color: #2C2C2A; }
     .user-meta { font-size: 12px; color: #888780; }
     .role-select { font-size: 12px; padding: 4px 8px; border: 1px solid rgba(211,209,199,0.8); border-radius: 6px; background: white; color: #444441; cursor: pointer; }
-
-    /* Уведомления */
     .custom-notification { position: fixed; bottom: 20px; right: 20px; padding: 12px 24px; border-radius: 10px; font-size: 14px; z-index: 10000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-weight: 500; animation: slideInError 0.3s ease; }
     .permission-note { display:inline-flex; margin-left:8px; padding:2px 8px; border-radius:999px; font-size:11px; color:#4D45D5; background:rgba(77,69,213,0.08); }
     .dashboard-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:18px; }
@@ -131,11 +127,11 @@
       <p style="color:#6E6A61; margin-top:0; margin-bottom:16px; font-size:14px;">Здесь вы можете управлять участниками доски и настраивать их права доступа.</p>
       <div id="boardMembersList" style="max-height:60vh;overflow-y:auto;"></div>
       <div style="margin-top:16px; border-top:1px solid rgba(211,209,199,0.3); padding-top:12px;">
-    <select id="addMemberSelect" class="add-member-select" style="width:100%; padding:8px; border-radius:14px;" disabled>
-      <option value="">-- Добавить участника --</option>
-    </select>
-    <button id="addMemberButton" class="btn" style="margin-top:8px; width:100%;" onclick="addMemberToBoard()" disabled>Добавить</button>
-  </div>
+        <select id="addMemberSelect" class="add-member-select" style="width:100%; padding:8px; border-radius:14px;" disabled>
+          <option value="">-- Добавить участника --</option>
+        </select>
+        <button id="addMemberButton" class="btn" style="margin-top:8px; width:100%;" onclick="addMemberToBoard()" disabled>Добавить</button>
+      </div>
       <div class="modal-buttons">
         <button class="modal-cancel" onclick="closeMembersModal()">Закрыть</button>
       </div>
@@ -165,7 +161,7 @@
     let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
     let boardUsers = [];
     let editingBoardId = null;
-    let allBoards = []; // глобальная переменная для хранения списка досок
+    let allBoards = [];
     let systemName = 'Task Manager';
 
     async function init() {
@@ -177,9 +173,7 @@
         renderLogin();
         document.title = systemName;
         const loginHeading = document.querySelector('.login-card h1, body h1');
-        if (loginHeading) {
-          loginHeading.textContent = systemName;
-        }
+        if (loginHeading) loginHeading.textContent = systemName;
         return;
       }
       await loadBoardUsers();
@@ -229,9 +223,7 @@
       const data = await res.json();
       const list = data.results || data;
       currentUser = list.find(u => u.username === username || u.id === userId) || list[0];
-      if (currentUser) {
-        localStorage.setItem('currentUser', JSON.stringify(currentUser));
-      }
+      if (currentUser) localStorage.setItem('currentUser', JSON.stringify(currentUser));
     }
 
     function renderLogin() {
@@ -294,9 +286,7 @@
 
     function renderUserInfo() {
       const infoEl = document.getElementById('currentUserInfo');
-      if (infoEl) {
-        infoEl.textContent = `Пользователь: ${currentUser.full_name || currentUser.username} (${currentUser.role})`;
-      }
+      if (infoEl) infoEl.textContent = `Пользователь: ${currentUser.full_name || currentUser.username} (${currentUser.role})`;
     }
 
     function escHtml(str) {
@@ -305,18 +295,14 @@
 
     async function loadBoardSettings() {
       try {
-        const headers = token
-          ? authHeaders()
-          : { 'Accept': 'application/json' };
+        const headers = token ? authHeaders() : { 'Accept': 'application/json' };
         const res = await fetch(`${API}/board-settings/current/`, { headers });
         if (!res.ok) return;
         const data = await res.json();
         if (data.system_name) {
           systemName = data.system_name;
           const titleEl = document.getElementById('systemName');
-          if (titleEl) {
-            titleEl.textContent = data.system_name;
-          }
+          if (titleEl) titleEl.textContent = data.system_name;
           document.title = data.system_name;
         }
       } catch(e) {
@@ -338,37 +324,90 @@
       });
     }
 
+    // ─── Функции проверки доступа ───────────────────────────────────────────
+
+    function isBoardMember(board) {
+      return (board.memberships || []).some(
+        m => Number(m.user?.id || m.user) === Number(currentUser?.id)
+      );
+    }
+
+    // Видна ли доска в списке
+    function canViewBoard(board) {
+      if (Number(board.creator) === Number(currentUser?.id)) return true; // создатель
+      if (isBoardMember(board)) return true;                               // участник
+      if (board.privacy === 'public') return true;                         // публичная
+      return false;
+    }
+
+    // Можно ли зайти внутрь доски
+    function canEnterBoard(board) {
+      if (Number(board.creator) === Number(currentUser?.id)) return true; // создатель
+      if (isBoardMember(board)) return true;                               // участник
+      if (board.allow_anyone_view) return true;                            // открытый доступ
+      return false;
+    }
+
+    // Можно ли кликом по карточке открыть модалку участников
+    function canOpenMembersModal(board) {
+      return canEnterBoard(board) || Number(board.creator) === Number(currentUser?.id);
+    }
+
+    // ─── Загрузка и рендер досок ────────────────────────────────────────────
+
     async function loadBoards() {
       const res = await fetch(`${API}/boards/`, { headers: authHeaders() });
       if (!res.ok) return;
       const data = await res.json();
       const boards = data.results || data;
       allBoards = boards;
+
+      // Приватные доски скрываем от посторонних
+      const visibleBoards = boards.filter(board => canViewBoard(board));
+
       const list = document.getElementById('boardList');
       const empty = document.getElementById('boardEmpty');
-      list.innerHTML = boards.map(board => `
-        <div class="board-card" onclick="showBoardMembers(${board.id})" style="cursor:pointer;">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-            <div>
-              <h2>${board.name}</h2>
-              <div class="board-meta"><span class="board-label">${board.privacy === 'public' ? 'Публичная' : 'Приватная'}</span></div>
+
+      list.innerHTML = visibleBoards.map(board => {
+        const canEnter = canEnterBoard(board);
+        const isCreator = Number(board.creator) === Number(currentUser?.id);
+        // Клик по карточке открывает модалку только если пользователь имеет доступ или создатель
+        const cardClick = canOpenMembersModal(board)
+          ? `onclick="showBoardMembers(${board.id})" style="cursor:pointer;"`
+          : `style="cursor:default;"`;
+
+        return `
+          <div class="board-card" ${cardClick}>
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+              <div>
+                <h2>${escHtml(board.name)}</h2>
+                <div class="board-meta"><span class="board-label">${board.privacy === 'public' ? 'Публичная' : 'Приватная'}</span></div>
+              </div>
+              <div style="font-size:12px;color:${board.allow_anyone_view ? '#4CAF50' : '#E24B4A'};white-space:nowrap;">
+                ${board.allow_anyone_view ? 'Открыт доступ' : 'Только участники'}
+              </div>
             </div>
-            <div style="font-size:12px;color:${board.allow_anyone_view ? '#4CAF50' : '#E24B4A'};white-space:nowrap;">${board.allow_anyone_view ? 'Открыт доступ' : 'Только участники'}</div>
+            <div class="board-meta">Создатель: ${escHtml(board.creator_name || '')}</div>
+            ${board.description ? `<div class="board-meta">${escHtml(board.description)}</div>` : ''}
+            <div class="board-meta">Участников: ${board.memberships?.length || 0}</div>
+            <div class="board-actions">
+              ${canEnter
+                ? `<a class="btn open-board" href="/main/?board=${board.id}" onclick="event.stopPropagation();">Перейти</a>`
+                : `<button class="btn open-board" style="opacity:0.5;cursor:not-allowed;" onclick="event.stopPropagation(); showNotification('Нет доступа к этой доске', 'error');" title="Вы не являетесь участником этой доски">🔒 Нет доступа</button>`
+              }
+              ${isCreator ? `
+                <button class="btn" onclick="event.stopPropagation(); openEditBoard(${board.id})">Редактировать</button>
+                <button class="btn" onclick="event.stopPropagation(); deleteBoard(${board.id})">Удалить</button>
+              ` : ''}
+            </div>
           </div>
-          <div class="board-meta">Создатель: ${board.creator_name || ''}</div>
-          ${board.description ? `<div class="board-meta">${board.description}</div>` : ''}
-          <div class="board-meta">Участников: ${board.memberships?.length || 0}</div>
-          <div class="board-actions">
-            <a class="btn open-board" href="/main/?board=${board.id}" onclick="event.stopPropagation();">Перейти</a>
-            ${Number(board.creator) === Number(currentUser?.id) ? `
-              <button class="btn" onclick="event.stopPropagation(); openEditBoard(${board.id})">Редактировать</button>
-              <button class="btn" onclick="event.stopPropagation(); deleteBoard(${board.id})">Удалить</button>
-            ` : ''}
-          </div>
-        </div>
-      `).join('');
-      empty.style.display = boards.length ? 'none' : 'block';
+        `;
+      }).join('');
+
+      empty.style.display = visibleBoards.length ? 'none' : 'block';
     }
+
+    // ─── Дашборд ────────────────────────────────────────────────────────────
 
     async function openBoardsDashboard() {
       if (!canOpenBoardsDashboard()) return;
@@ -402,6 +441,8 @@
       document.getElementById('boardsDashboardModal').classList.remove('active');
     }
 
+    // ─── Форма создания/редактирования доски ────────────────────────────────
+
     function clearBoardForm() {
       document.getElementById('boardName').value = '';
       document.getElementById('boardDescription').value = '';
@@ -409,8 +450,8 @@
       document.getElementById('boardAllowAnyone').checked = true;
       const participantSelect = document.getElementById('boardParticipants');
       const viewerSelect = document.getElementById('boardViewers');
-      if (participantSelect) Array.from(participantSelect.options).forEach(option => option.selected = false);
-      if (viewerSelect) Array.from(viewerSelect.options).forEach(option => option.selected = false);
+      if (participantSelect) Array.from(participantSelect.options).forEach(o => o.selected = false);
+      if (viewerSelect) Array.from(viewerSelect.options).forEach(o => o.selected = false);
     }
 
     function openBoardModal() {
@@ -437,12 +478,8 @@
       const viewerSelect = document.getElementById('boardViewers');
       const participantIds = board.memberships?.filter(m => m.role === 'editor').map(m => m.user?.id || m.user) || [];
       const viewerIds = board.memberships?.filter(m => m.role === 'viewer').map(m => m.user?.id || m.user) || [];
-      if (participantSelect) {
-        Array.from(participantSelect.options).forEach(option => option.selected = participantIds.includes(parseInt(option.value)));
-      }
-      if (viewerSelect) {
-        Array.from(viewerSelect.options).forEach(option => option.selected = viewerIds.includes(parseInt(option.value)));
-      }
+      if (participantSelect) Array.from(participantSelect.options).forEach(o => o.selected = participantIds.includes(parseInt(o.value)));
+      if (viewerSelect) Array.from(viewerSelect.options).forEach(o => o.selected = viewerIds.includes(parseInt(o.value)));
       document.getElementById('boardModal').classList.add('active');
     }
 
@@ -456,27 +493,19 @@
         showNotification('Введите название доски', 'error');
         return;
       }
-      const description = document.getElementById('boardDescription').value.trim();
-      const privacy = document.getElementById('boardPrivacy').value;
-      const allowAnyone = document.getElementById('boardAllowAnyone').checked;
-      const participantIds = Array.from(document.getElementById('boardParticipants').selectedOptions).map(o => parseInt(o.value));
-      const viewerIds = Array.from(document.getElementById('boardViewers').selectedOptions).map(o => parseInt(o.value));
       const payload = {
-        name, description, privacy,
-        allow_anyone_view: allowAnyone,
-        participant_ids: participantIds,
-        viewer_ids: viewerIds
+        name,
+        description: document.getElementById('boardDescription').value.trim(),
+        privacy: document.getElementById('boardPrivacy').value,
+        allow_anyone_view: document.getElementById('boardAllowAnyone').checked,
+        participant_ids: Array.from(document.getElementById('boardParticipants').selectedOptions).map(o => parseInt(o.value)),
+        viewer_ids: Array.from(document.getElementById('boardViewers').selectedOptions).map(o => parseInt(o.value))
       };
       const method = editingBoardId ? 'PATCH' : 'POST';
       const url = editingBoardId ? `${API}/boards/${editingBoardId}/` : `${API}/boards/`;
-      const res = await fetch(url, {
-        method,
-        headers: authHeaders(),
-        body: JSON.stringify(payload)
-      });
+      const res = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(payload) });
       if (!res.ok) {
-        const error = await res.text();
-        showNotification('Не удалось сохранить настройки доски: ' + error, 'error');
+        showNotification('Не удалось сохранить настройки доски: ' + await res.text(), 'error');
         return;
       }
       closeBoardModal();
@@ -484,7 +513,8 @@
       editingBoardId = null;
     }
 
-    // Уведомления
+    // ─── Уведомления ────────────────────────────────────────────────────────
+
     function showNotification(message, type = 'error') {
       const old = document.querySelector('.custom-notification');
       if (old) old.remove();
@@ -500,7 +530,8 @@
       }, 3000);
     }
 
-    // Открыть модалку с глобальным списком пользователей
+    // ─── Глобальный список пользователей ────────────────────────────────────
+
     let globalUsersList = [];
 
     async function openGlobalUsers() {
@@ -513,13 +544,13 @@
         <div class="user-card">
           <div class="user-avatar">${((u.first_name||'')[0]||(u.username||'')[0]||'?').toUpperCase()}${((u.last_name||'')[0]||'').toUpperCase()}</div>
           <div class="user-info">
-            <div class="user-name">${u.full_name||u.username}</div>
+            <div class="user-name">${escHtml(u.full_name||u.username)}</div>
             <div class="user-meta">${roles[u.role]||u.role}</div>
           </div>
           ${canChangeRoles() && ROLE_HIERARCHY[currentUser?.role] > ROLE_HIERARCHY[u.role]
             ? `<select class="role-select" onchange="changeGlobalUserRole(${u.id}, this.value)">${Object.entries(roles)
                 .filter(([value]) => ROLE_HIERARCHY[currentUser?.role] > ROLE_HIERARCHY[value])
-                .map(([value, label]) => `<option value="${value}"${u.role===value ? ' selected' : ''}>${label}</option>`)
+                .map(([value, label]) => `<option value="${value}"${u.role===value?' selected':''}>${label}</option>`)
                 .join('')}</select>`
             : ''}
         </div>
@@ -528,15 +559,11 @@
       modal.className = 'modal-overlay active global-users-modal';
       modal.innerHTML = `<div class="modal" style="width:480px;"><h2>Пользователи системы</h2><div style="max-height:60vh;overflow-y:auto;">${html}</div><div class="modal-buttons"><button class="modal-cancel" onclick="this.closest('.modal-overlay').remove()">Закрыть</button></div></div>`;
       document.body.appendChild(modal);
-      modal.addEventListener('click', (e) => { if(e.target === modal) modal.remove(); });
+      modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
     }
 
     async function changeGlobalUserRole(userId, role) {
-      const res = await fetch(`${API}/users/${userId}/`, {
-        method: 'PATCH',
-        headers: authHeaders(),
-        body: JSON.stringify({ role })
-      });
+      const res = await fetch(`${API}/users/${userId}/`, { method:'PATCH', headers: authHeaders(), body: JSON.stringify({ role }) });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         showNotification(err.error || 'Не удалось изменить роль', 'error');
@@ -546,128 +573,121 @@
       await openGlobalUsers();
     }
 
-    // Показать участников конкретной доски
+    // ─── Модалка участников доски ───────────────────────────────────────────
+
     let currentBoardForMembers = null;
 
-function renderBoardMember(member, board, canManage, rolesMap) {
-  const roleDefaults = getRoleDefaultPermissions(member.user?.role);
-  const effectivePermissions = {
-    view_all_tasks: member.view_all_tasks || roleDefaults.view_all_tasks,
-    edit_columns: member.edit_columns || roleDefaults.edit_columns,
-    reorder_columns: member.reorder_columns || roleDefaults.reorder_columns
-  };
-  const inherited = {
-    view_all_tasks: roleDefaults.view_all_tasks && !member.view_all_tasks,
-    edit_columns: roleDefaults.edit_columns && !member.edit_columns,
-    reorder_columns: roleDefaults.reorder_columns && !member.reorder_columns
-  };
-  return `
-      <div class="user-card">
-        <div class="user-avatar">${((member.user?.first_name||'')[0]||(member.user?.username||'')[0]||'?').toUpperCase()}${((member.user?.last_name||'')[0]||'').toUpperCase()}</div>
-        <div class="user-info">
-          <div class="user-name">${member.user?.full_name || member.user?.username}</div>
-          <div class="user-meta">Роль: ${rolesMap[member.role]}</div>
-          ${canManage ? `
-            <div class="user-permissions">
-              <strong style="display:block;margin-bottom:6px;">Настройки доступа:</strong>
-              <label><input type="checkbox" ${effectivePermissions.view_all_tasks ? 'checked' : ''} ${inherited.view_all_tasks ? 'disabled' : ''} onchange="changeBoardMemberPermission(${board.id}, ${member.user.id}, 'view_all_tasks', this.checked)"> Просматривать все задачи${inherited.view_all_tasks ? '<span class="permission-note">По роли</span>' : ''}</label>
-              <label><input type="checkbox" ${effectivePermissions.edit_columns ? 'checked' : ''} ${inherited.edit_columns ? 'disabled' : ''} onchange="changeBoardMemberPermission(${board.id}, ${member.user.id}, 'edit_columns', this.checked)"> Редактировать колонки${inherited.edit_columns ? '<span class="permission-note">По роли</span>' : ''}</label>
-              <label><input type="checkbox" ${effectivePermissions.reorder_columns ? 'checked' : ''} ${inherited.reorder_columns ? 'disabled' : ''} onchange="changeBoardMemberPermission(${board.id}, ${member.user.id}, 'reorder_columns', this.checked)"> Менять порядок колонок${inherited.reorder_columns ? '<span class="permission-note">По роли</span>' : ''}</label>
-            </div>
-          ` : ''}
+    function renderBoardMember(member, board, canManage, rolesMap) {
+      const roleDefaults = getRoleDefaultPermissions(member.user?.role);
+      const effectivePermissions = {
+        view_all_tasks: member.view_all_tasks || roleDefaults.view_all_tasks,
+        edit_columns: member.edit_columns || roleDefaults.edit_columns,
+        reorder_columns: member.reorder_columns || roleDefaults.reorder_columns
+      };
+      const inherited = {
+        view_all_tasks: roleDefaults.view_all_tasks && !member.view_all_tasks,
+        edit_columns: roleDefaults.edit_columns && !member.edit_columns,
+        reorder_columns: roleDefaults.reorder_columns && !member.reorder_columns
+      };
+      return `
+        <div class="user-card">
+          <div class="user-avatar">${((member.user?.first_name||'')[0]||(member.user?.username||'')[0]||'?').toUpperCase()}${((member.user?.last_name||'')[0]||'').toUpperCase()}</div>
+          <div class="user-info">
+            <div class="user-name">${escHtml(member.user?.full_name || member.user?.username)}</div>
+            <div class="user-meta">Роль: ${rolesMap[member.role]}</div>
+            ${canManage ? `
+              <div class="user-permissions">
+                <strong style="display:block;margin-bottom:6px;">Настройки доступа:</strong>
+                <label><input type="checkbox" ${effectivePermissions.view_all_tasks?'checked':''} ${inherited.view_all_tasks?'disabled':''} onchange="changeBoardMemberPermission(${board.id}, ${member.user.id}, 'view_all_tasks', this.checked)"> Просматривать все задачи${inherited.view_all_tasks?'<span class="permission-note">По роли</span>':''}</label>
+                <label><input type="checkbox" ${effectivePermissions.edit_columns?'checked':''} ${inherited.edit_columns?'disabled':''} onchange="changeBoardMemberPermission(${board.id}, ${member.user.id}, 'edit_columns', this.checked)"> Редактировать колонки${inherited.edit_columns?'<span class="permission-note">По роли</span>':''}</label>
+                <label><input type="checkbox" ${effectivePermissions.reorder_columns?'checked':''} ${inherited.reorder_columns?'disabled':''} onchange="changeBoardMemberPermission(${board.id}, ${member.user.id}, 'reorder_columns', this.checked)"> Менять порядок колонок${inherited.reorder_columns?'<span class="permission-note">По роли</span>':''}</label>
+              </div>
+            ` : ''}
+          </div>
+          ${canManage ? `<button class="member-remove" onclick="removeMemberFromBoard(${board.id}, ${member.user.id})">✕</button>` : ''}
         </div>
-        ${canManage ? `<button class="member-remove" onclick="removeMemberFromBoard(${board.id}, ${member.user.id})">✕</button>` : ''}
-      </div>
-    `;
-}
-
-async function showBoardMembers(boardId) {
-  const board = allBoards.find(b => Number(b.id) === Number(boardId));
-  if (!board) {
-    console.error('Board not found for members modal', boardId, allBoards);
-    return;
-  }
-  currentBoardForMembers = board;
-  document.getElementById('boardMembersTitle').innerHTML = `Участники доски: ${board.name}`;
-  const members = board.memberships || [];
-  const rolesMap = { admin: 'Админ', editor: 'Редактор', viewer: 'Зритель' };
-  const canManage = Number(board.creator) === Number(currentUser?.id) || currentUser?.role === 'admin';
-
-  const addMemberSelect = document.getElementById('addMemberSelect');
-  const addMemberButton = document.getElementById('addMemberButton');
-  let availableUsers = [];
-  if (addMemberSelect) {
-    const existingMemberIds = members.map(m => m.user?.id || m.user).filter(Boolean);
-    availableUsers = boardUsers.filter(u => u.id !== currentUser.id && !existingMemberIds.includes(u.id));
-    addMemberSelect.innerHTML = [`
-      <option value="">-- Добавить участника --</option>
-      ${availableUsers.length ? availableUsers.map(u => `<option value="${u.id}">${escHtml(u.full_name || u.username)} (${escHtml(u.username)})</option>`).join('') : '<option value="">Нет доступных пользователей</option>'}
-    `].join('');
-    addMemberSelect.disabled = !canManage || !availableUsers.length;
-  }
-  if (addMemberButton) {
-    addMemberButton.disabled = !canManage || !availableUsers.length;
-  }
-
-  const list = document.getElementById('boardMembersList');
-  const existingNotice = document.getElementById('boardMembersNotice');
-  if (existingNotice) existingNotice.remove();
-  if (!members.length) {
-    list.innerHTML = '<div style="padding:24px;text-align:center;">Нет участников</div>';
-  } else {
-    list.innerHTML = members.map(m => `
-      <div class="user-card">
-        <div class="user-avatar">${((m.user?.first_name||'')[0]||(m.user?.username||'')[0]||'?').toUpperCase()}${((m.user?.last_name||'')[0]||'').toUpperCase()}</div>
-        <div class="user-info">
-          <div class="user-name">${m.user?.full_name || m.user?.username}</div>
-          <div class="user-meta">Роль: ${rolesMap[m.role]}</div>
-          ${canManage ? `
-            <div class="user-permissions">
-              <strong style="display:block;margin-bottom:6px;">Настройки доступа:</strong>
-              <label><input type="checkbox" ${m.view_all_tasks ? 'checked' : ''} onchange="changeBoardMemberPermission(${board.id}, ${m.user.id}, 'view_all_tasks', this.checked)"> Просматривать все задачи</label>
-              <label><input type="checkbox" ${m.edit_columns ? 'checked' : ''} onchange="changeBoardMemberPermission(${board.id}, ${m.user.id}, 'edit_columns', this.checked)"> Редактировать колонки</label>
-              <label><input type="checkbox" ${m.reorder_columns ? 'checked' : ''} onchange="changeBoardMemberPermission(${board.id}, ${m.user.id}, 'reorder_columns', this.checked)"> Менять порядок колонок</label>
-            </div>
-          ` : ''}
-        </div>
-        ${canManage ? `<button class="member-remove" onclick="removeMemberFromBoard(${board.id}, ${m.user.id})">✕</button>` : ''}
-      </div>
-    `).join('');
-    if (canManage) {
-      const cards = list.querySelectorAll('.user-card');
-      members.forEach((member, index) => {
-        const card = cards[index];
-        if (!card) return;
-        const defaults = getRoleDefaultPermissions(member.user?.role);
-        const checkboxes = card.querySelectorAll('input[type="checkbox"]');
-        const permissionKeys = ['view_all_tasks', 'edit_columns', 'reorder_columns'];
-        checkboxes.forEach((checkbox, checkboxIndex) => {
-          const key = permissionKeys[checkboxIndex];
-          if (!key || !defaults[key] || member[key]) return;
-          checkbox.checked = true;
-          checkbox.disabled = true;
-          const note = document.createElement('span');
-          note.className = 'permission-note';
-          note.textContent = 'По роли';
-          checkbox.parentElement.appendChild(note);
-        });
-      });
+      `;
     }
-  }
 
-  if (!canManage) {
-    const note = document.createElement('div');
-    note.id = 'boardMembersNotice';
-    note.style.margin = '12px 0 0';
-    note.style.padding = '12px';
-    note.style.background = 'rgba(245,244,242,0.9)';
-    note.style.borderRadius = '14px';
-    note.style.color = '#6E6A61';
-    note.textContent = 'У вас нет прав изменять участников и их доступы. Обратитесь к создателю доски.';
-    list.parentNode.insertBefore(note, list.nextSibling);
-  }
-  document.getElementById('boardMembersModal').classList.add('active');
-}
+    async function showBoardMembers(boardId) {
+      const board = allBoards.find(b => Number(b.id) === Number(boardId));
+      if (!board) { console.error('Board not found', boardId); return; }
+      currentBoardForMembers = board;
+      document.getElementById('boardMembersTitle').textContent = `Участники доски: ${board.name}`;
+      const members = board.memberships || [];
+      const rolesMap = { admin:'Админ', editor:'Редактор', viewer:'Зритель' };
+      const canManage = Number(board.creator) === Number(currentUser?.id) || currentUser?.role === 'admin';
+
+      const addMemberSelect = document.getElementById('addMemberSelect');
+      const addMemberButton = document.getElementById('addMemberButton');
+      if (addMemberSelect) {
+        const existingMemberIds = members.map(m => m.user?.id || m.user).filter(Boolean);
+        const availableUsers = boardUsers.filter(u => u.id !== currentUser.id && !existingMemberIds.includes(u.id));
+        addMemberSelect.innerHTML = `<option value="">-- Добавить участника --</option>` +
+          (availableUsers.length
+            ? availableUsers.map(u => `<option value="${u.id}">${escHtml(u.full_name || u.username)} (${escHtml(u.username)})</option>`).join('')
+            : '<option value="" disabled>Нет доступных пользователей</option>');
+        addMemberSelect.disabled = !canManage || !availableUsers.length;
+        if (addMemberButton) addMemberButton.disabled = !canManage || !availableUsers.length;
+      }
+
+      const list = document.getElementById('boardMembersList');
+      document.getElementById('boardMembersNotice')?.remove();
+
+      if (!members.length) {
+        list.innerHTML = '<div style="padding:24px;text-align:center;">Нет участников</div>';
+      } else {
+        list.innerHTML = members.map(m => `
+          <div class="user-card">
+            <div class="user-avatar">${((m.user?.first_name||'')[0]||(m.user?.username||'')[0]||'?').toUpperCase()}${((m.user?.last_name||'')[0]||'').toUpperCase()}</div>
+            <div class="user-info">
+              <div class="user-name">${escHtml(m.user?.full_name || m.user?.username)}</div>
+              <div class="user-meta">Роль: ${rolesMap[m.role]}</div>
+              ${canManage ? `
+                <div class="user-permissions">
+                  <strong style="display:block;margin-bottom:6px;">Настройки доступа:</strong>
+                  <label><input type="checkbox" ${m.view_all_tasks?'checked':''} onchange="changeBoardMemberPermission(${board.id}, ${m.user.id}, 'view_all_tasks', this.checked)"> Просматривать все задачи</label>
+                  <label><input type="checkbox" ${m.edit_columns?'checked':''} onchange="changeBoardMemberPermission(${board.id}, ${m.user.id}, 'edit_columns', this.checked)"> Редактировать колонки</label>
+                  <label><input type="checkbox" ${m.reorder_columns?'checked':''} onchange="changeBoardMemberPermission(${board.id}, ${m.user.id}, 'reorder_columns', this.checked)"> Менять порядок колонок</label>
+                </div>
+              ` : ''}
+            </div>
+            ${canManage ? `<button class="member-remove" onclick="removeMemberFromBoard(${board.id}, ${m.user.id})">✕</button>` : ''}
+          </div>
+        `).join('');
+
+        // Применяем права по роли (disabled + метка) через DOM после рендера
+        if (canManage) {
+          const cards = list.querySelectorAll('.user-card');
+          members.forEach((member, index) => {
+            const card = cards[index];
+            if (!card) return;
+            const defaults = getRoleDefaultPermissions(member.user?.role);
+            const permissionKeys = ['view_all_tasks', 'edit_columns', 'reorder_columns'];
+            card.querySelectorAll('input[type="checkbox"]').forEach((checkbox, i) => {
+              const key = permissionKeys[i];
+              if (!key || !defaults[key] || member[key]) return;
+              checkbox.checked = true;
+              checkbox.disabled = true;
+              const note = document.createElement('span');
+              note.className = 'permission-note';
+              note.textContent = 'По роли';
+              checkbox.parentElement.appendChild(note);
+            });
+          });
+        }
+      }
+
+      if (!canManage) {
+        const note = document.createElement('div');
+        note.id = 'boardMembersNotice';
+        note.style.cssText = 'margin:12px 0 0;padding:12px;background:rgba(245,244,242,0.9);border-radius:14px;color:#6E6A61;';
+        note.textContent = 'У вас нет прав изменять участников и их доступы. Обратитесь к создателю доски.';
+        list.parentNode.insertBefore(note, list.nextSibling);
+      }
+
+      document.getElementById('boardMembersModal').classList.add('active');
+    }
 
     function closeMembersModal() {
       document.getElementById('boardMembersModal').classList.remove('active');
@@ -676,18 +696,11 @@ async function showBoardMembers(boardId) {
 
     async function changeBoardMemberPermission(boardId, userId, permission, value) {
       try {
-        const payload = { user_id: userId };
-        payload[permission] = value;
-        const res = await fetch(`${API}/boards/${boardId}/update_membership/`, {
-          method: 'PATCH',
-          headers: authHeaders(),
-          body: JSON.stringify(payload)
-        });
+        const payload = { user_id: userId, [permission]: value };
+        const res = await fetch(`${API}/boards/${boardId}/update_membership/`, { method:'PATCH', headers: authHeaders(), body: JSON.stringify(payload) });
         if (res.ok) {
-          await loadBoards(); // перезагрузить доски, чтобы обновить список участников
-          if (currentBoardForMembers && currentBoardForMembers.id === boardId) {
-            await showBoardMembers(boardId);
-          }
+          await loadBoards();
+          if (currentBoardForMembers?.id === boardId) await showBoardMembers(boardId);
           showNotification('Права обновлены', 'success');
         } else {
           const err = await res.json();
@@ -698,91 +711,83 @@ async function showBoardMembers(boardId) {
       }
     }
 
-
-
-    
-async function addMemberToBoard() {
-  const select = document.getElementById('addMemberSelect');
-  const userId = select.value;
-  if (!userId || !currentBoardForMembers) return;
-  try {
-    const res = await fetch(`${API}/boards/${currentBoardForMembers.id}/add_member/`, {
-      method: 'POST',
-      headers: authHeaders(),
-      body: JSON.stringify({ user_id: parseInt(userId), role: 'viewer' })
-    });
-    if (res.ok) {
-      showNotification('Участник добавлен', 'success');
-      await showBoardMembers(currentBoardForMembers.id);
-    } else {
-      const err = await res.json();
-      showNotification(err.error || 'Ошибка добавления', 'error');
+    async function addMemberToBoard() {
+      const select = document.getElementById('addMemberSelect');
+      const userId = select.value;
+      if (!userId || !currentBoardForMembers) return;
+      try {
+        const res = await fetch(`${API}/boards/${currentBoardForMembers.id}/add_member/`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ user_id: parseInt(userId), role: 'viewer' })
+        });
+        if (res.ok) {
+          showNotification('Участник добавлен', 'success');
+          await loadBoards(); // обновляем allBoards
+          await showBoardMembers(currentBoardForMembers.id);
+        } else {
+          const err = await res.json();
+          showNotification(err.error || 'Ошибка добавления', 'error');
+        }
+      } catch(e) {
+        showNotification('Ошибка сети', 'error');
+      }
     }
-  } catch(e) {
-    showNotification('Ошибка сети', 'error');
-  }
-}
 
-async function removeMemberFromBoard(boardId, userId) {
-  if (!confirm('Удалить участника из доски?')) return;
-  try {
-    const res = await fetch(`${API}/boards/${boardId}/remove_member/`, {
-      method: 'POST',
-      headers: authHeaders(),
-      body: JSON.stringify({ user_id: userId })
-    });
-    if (res.ok) {
-      showNotification('Участник удалён', 'success');
-      await showBoardMembers(boardId);
-    } else {
-      const err = await res.json();
-      showNotification(err.error || 'Ошибка удаления', 'error');
+    async function removeMemberFromBoard(boardId, userId) {
+      if (!confirm('Удалить участника из доски?')) return;
+      try {
+        const res = await fetch(`${API}/boards/${boardId}/remove_member/`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ user_id: userId })
+        });
+        if (res.ok) {
+          showNotification('Участник удалён', 'success');
+          await loadBoards(); // обновляем allBoards
+          await showBoardMembers(boardId);
+        } else {
+          const err = await res.json();
+          showNotification(err.error || 'Ошибка удаления', 'error');
+        }
+      } catch(e) {
+        showNotification('Ошибка сети', 'error');
+      }
     }
-  } catch(e) {
-    showNotification('Ошибка сети', 'error');
-  }
-}
 
-async function deleteBoard(boardId) {
-  if (!confirm('Удалить доску? Это действие необратимо.')) return;
-  try {
-    const res = await fetch(`${API}/boards/${boardId}/`, {
-      method: 'DELETE',
-      headers: authHeaders()
-    });
-    if (res.ok) {
-      showNotification('Доска удалена', 'success');
-      await loadBoards();
-      closeMembersModal();
-    } else {
-      const err = await res.json();
-      showNotification(err.error || 'Ошибка удаления доски', 'error');
+    async function deleteBoard(boardId) {
+      if (!confirm('Удалить доску? Это действие необратимо.')) return;
+      try {
+        const res = await fetch(`${API}/boards/${boardId}/`, { method:'DELETE', headers: authHeaders() });
+        if (res.ok) {
+          showNotification('Доска удалена', 'success');
+          await loadBoards();
+          closeMembersModal();
+        } else {
+          const err = await res.json();
+          showNotification(err.error || 'Ошибка удаления доски', 'error');
+        }
+      } catch(e) {
+        showNotification('Ошибка сети', 'error');
+      }
     }
-  } catch(e) {
-    showNotification('Ошибка сети', 'error');
-  }
-}
 
-function logout() {
-  localStorage.removeItem('token');
-  localStorage.removeItem('currentUser');
-  token = null;
-  currentUser = null;
-  window.location.href = '/boards/';
-}
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('currentUser');
+      token = null;
+      currentUser = null;
+      window.location.href = '/boards/';
+    }
 
-function closeTopModalOnEscape() {
-  if (document.getElementById('boardsDashboardModal')?.classList.contains('active')) return closeBoardsDashboard();
-  if (document.getElementById('boardMembersModal')?.classList.contains('active')) return closeMembersModal();
-  if (document.getElementById('boardModal')?.classList.contains('active')) return closeBoardModal();
-  const dynamicModal = document.querySelector('.global-users-modal.active');
-  if (dynamicModal) dynamicModal.remove();
-}
+    function closeTopModalOnEscape() {
+      if (document.getElementById('boardsDashboardModal')?.classList.contains('active')) return closeBoardsDashboard();
+      if (document.getElementById('boardMembersModal')?.classList.contains('active')) return closeMembersModal();
+      if (document.getElementById('boardModal')?.classList.contains('active')) return closeBoardModal();
+      document.querySelector('.global-users-modal.active')?.remove();
+    }
 
-document.addEventListener('keydown', (event) => {
-  if (event.key !== 'Escape') return;
-  closeTopModalOnEscape();
-});
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeTopModalOnEscape(); });
 
     init();
   </script>
