@@ -122,12 +122,6 @@
       <h2 id="boardMembersTitle">Участники доски</h2>
       <p style="color:#6E6A61; margin-top:0; margin-bottom:16px; font-size:14px;">Здесь вы можете управлять участниками доски и настраивать их права доступа.</p>
       <div id="boardMembersList" style="max-height:60vh;overflow-y:auto;"></div>
-      <div style="margin-top:16px; border-top:1px solid rgba(211,209,199,0.3); padding-top:12px;">
-        <select id="addMemberSelect" class="add-member-select" style="width:100%; padding:8px; border-radius:14px;" disabled>
-          <option value="">-- Добавить участника --</option>
-        </select>
-        <button id="addMemberButton" class="btn" style="margin-top:8px; width:100%;" onclick="addMemberToBoard()" disabled>Добавить</button>
-      </div>
       <div class="modal-buttons">
         <button class="modal-cancel" onclick="closeMembersModal()">Закрыть</button>
       </div>
@@ -344,8 +338,12 @@ function canEnterBoard(board) {
   return false;
 }
 
-function canOpenMembersModal(board) {
-  return canViewBoard(board); // видит доску — может кликнуть
+function canManageBoard(board) {
+  if (Number(board.creator) === Number(currentUser?.id)) return true;
+  if (currentUser?.role === 'admin') return true;
+  return (board.memberships || []).some(
+    m => Number(m.user?.id || m.user) === Number(currentUser?.id) && m.role === 'admin'
+  );
 }
 
     // ─── Загрузка и рендер досок ────────────────────────────────────────────
@@ -365,11 +363,10 @@ function canOpenMembersModal(board) {
 
       list.innerHTML = visibleBoards.map(board => {
         const canEnter = canEnterBoard(board);
+        const canManage = canManageBoard(board);
         const isCreator = Number(board.creator) === Number(currentUser?.id);
-        // Клик по карточке открывает модалку только если пользователь имеет доступ или создатель
-        const cardClick = canOpenMembersModal(board)
-          ? `onclick="showBoardMembers(${board.id})" style="cursor:pointer;"`
-          : `style="cursor:default;"`;
+        // Клик по карточке открывает модалку только для тех, кто может управлять доской
+        const cardClick = canManage ? `onclick="showBoardMembers(${board.id})" style="cursor:pointer;"` : `style="cursor:default;"`;
 
         return `
           <div class="board-card" ${cardClick}>
@@ -568,19 +565,15 @@ function clearBoardForm() {
 
     // ─── Модалка участников доски ───────────────────────────────────────────
 
-    let currentBoardForMembers = null;
-
     function renderBoardMember(member, board, canManage, rolesMap) {
       const roleDefaults = getRoleDefaultPermissions(member.user?.role);
       const effectivePermissions = {
         view_all_tasks: member.view_all_tasks || roleDefaults.view_all_tasks,
         edit_columns: member.edit_columns || roleDefaults.edit_columns,
-        reorder_columns: member.reorder_columns || roleDefaults.reorder_columns
       };
       const inherited = {
         view_all_tasks: roleDefaults.view_all_tasks && !member.view_all_tasks,
         edit_columns: roleDefaults.edit_columns && !member.edit_columns,
-        reorder_columns: roleDefaults.reorder_columns && !member.reorder_columns
       };
       return `
         <div class="user-card">
@@ -593,7 +586,6 @@ function clearBoardForm() {
                 <strong style="display:block;margin-bottom:6px;">Настройки доступа:</strong>
                 <label><input type="checkbox" ${effectivePermissions.view_all_tasks?'checked':''} ${inherited.view_all_tasks?'disabled':''} onchange="changeBoardMemberPermission(${board.id}, ${member.user.id}, 'view_all_tasks', this.checked)"> Просматривать все задачи${inherited.view_all_tasks?'<span class="permission-note">По роли</span>':''}</label>
                 <label><input type="checkbox" ${effectivePermissions.edit_columns?'checked':''} ${inherited.edit_columns?'disabled':''} onchange="changeBoardMemberPermission(${board.id}, ${member.user.id}, 'edit_columns', this.checked)"> Редактировать колонки${inherited.edit_columns?'<span class="permission-note">По роли</span>':''}</label>
-                <label><input type="checkbox" ${effectivePermissions.reorder_columns?'checked':''} ${inherited.reorder_columns?'disabled':''} onchange="changeBoardMemberPermission(${board.id}, ${member.user.id}, 'reorder_columns', this.checked)"> Менять порядок колонок${inherited.reorder_columns?'<span class="permission-note">По роли</span>':''}</label>
               </div>
             ` : ''}
           </div>
@@ -605,24 +597,10 @@ function clearBoardForm() {
     async function showBoardMembers(boardId) {
       const board = allBoards.find(b => Number(b.id) === Number(boardId));
       if (!board) { console.error('Board not found', boardId); return; }
-      currentBoardForMembers = board;
       document.getElementById('boardMembersTitle').textContent = `Участники доски: ${board.name}`;
       const members = board.memberships || [];
       const rolesMap = { admin:'Админ', editor:'Редактор', viewer:'Зритель' };
       const canManage = Number(board.creator) === Number(currentUser?.id) || currentUser?.role === 'admin';
-
-      const addMemberSelect = document.getElementById('addMemberSelect');
-      const addMemberButton = document.getElementById('addMemberButton');
-      if (addMemberSelect) {
-        const existingMemberIds = members.map(m => m.user?.id || m.user).filter(Boolean);
-        const availableUsers = boardUsers.filter(u => u.id !== currentUser.id && !existingMemberIds.includes(u.id));
-        addMemberSelect.innerHTML = `<option value="">-- Добавить участника --</option>` +
-          (availableUsers.length
-            ? availableUsers.map(u => `<option value="${u.id}">${escHtml(u.full_name || u.username)} (${escHtml(u.username)})</option>`).join('')
-            : '<option value="" disabled>Нет доступных пользователей</option>');
-        addMemberSelect.disabled = !canManage || !availableUsers.length;
-        if (addMemberButton) addMemberButton.disabled = !canManage || !availableUsers.length;
-      }
 
       const list = document.getElementById('boardMembersList');
       document.getElementById('boardMembersNotice')?.remove();
@@ -641,7 +619,6 @@ function clearBoardForm() {
                   <strong style="display:block;margin-bottom:6px;">Настройки доступа:</strong>
                   <label><input type="checkbox" ${m.view_all_tasks?'checked':''} onchange="changeBoardMemberPermission(${board.id}, ${m.user.id}, 'view_all_tasks', this.checked)"> Просматривать все задачи</label>
                   <label><input type="checkbox" ${m.edit_columns?'checked':''} onchange="changeBoardMemberPermission(${board.id}, ${m.user.id}, 'edit_columns', this.checked)"> Редактировать колонки</label>
-                  <label><input type="checkbox" ${m.reorder_columns?'checked':''} onchange="changeBoardMemberPermission(${board.id}, ${m.user.id}, 'reorder_columns', this.checked)"> Менять порядок колонок</label>
                 </div>
               ` : ''}
             </div>
@@ -656,7 +633,7 @@ function clearBoardForm() {
             const card = cards[index];
             if (!card) return;
             const defaults = getRoleDefaultPermissions(member.user?.role);
-            const permissionKeys = ['view_all_tasks', 'edit_columns', 'reorder_columns'];
+            const permissionKeys = ['view_all_tasks', 'edit_columns'];
             card.querySelectorAll('input[type="checkbox"]').forEach((checkbox, i) => {
               const key = permissionKeys[i];
               if (!key || !defaults[key] || member[key]) return;
@@ -684,7 +661,6 @@ function clearBoardForm() {
 
     function closeMembersModal() {
       document.getElementById('boardMembersModal').classList.remove('active');
-      currentBoardForMembers = null;
     }
 
     async function changeBoardMemberPermission(boardId, userId, permission, value) {
@@ -693,7 +669,7 @@ function clearBoardForm() {
         const res = await fetch(`${API}/boards/${boardId}/update_membership/`, { method:'PATCH', headers: authHeaders(), body: JSON.stringify(payload) });
         if (res.ok) {
           await loadBoards();
-          if (currentBoardForMembers?.id === boardId) await showBoardMembers(boardId);
+          await showBoardMembers(boardId);
           showNotification('Права обновлены', 'success');
         } else {
           const err = await res.json();
@@ -704,28 +680,6 @@ function clearBoardForm() {
       }
     }
 
-    async function addMemberToBoard() {
-      const select = document.getElementById('addMemberSelect');
-      const userId = select.value;
-      if (!userId || !currentBoardForMembers) return;
-      try {
-        const res = await fetch(`${API}/boards/${currentBoardForMembers.id}/add_member/`, {
-          method: 'POST',
-          headers: authHeaders(),
-          body: JSON.stringify({ user_id: parseInt(userId), role: 'viewer' })
-        });
-        if (res.ok) {
-          showNotification('Участник добавлен', 'success');
-          await loadBoards(); // обновляем allBoards
-          await showBoardMembers(currentBoardForMembers.id);
-        } else {
-          const err = await res.json();
-          showNotification(err.error || 'Ошибка добавления', 'error');
-        }
-      } catch(e) {
-        showNotification('Ошибка сети', 'error');
-      }
-    }
 
     async function removeMemberFromBoard(boardId, userId) {
       if (!confirm('Удалить участника из доски?')) return;

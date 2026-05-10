@@ -574,7 +574,7 @@ if (window.location.pathname === '/main/' && !window.location.search.includes('b
   function canOpenBoardsDashboard() { return ['admin','chief','lead'].includes(currentUser?.role); }
   function canManage() { return ['admin','chief','lead'].includes(currentUser?.role) || currentBoardMembership?.role === 'admin' || currentBoardIsCreator(); }
   function canCreateColumn() { return ['admin','chief','lead'].includes(currentUser?.role) || currentBoardMembership?.edit_columns || currentBoardIsCreator(); }
-  function canReorderColumns() { return ['admin','chief','lead'].includes(currentUser?.role) || currentBoardMembership?.reorder_columns || currentBoardIsCreator(); }
+  function canReorderColumns() { return ['admin','chief','lead'].includes(currentUser?.role) || currentBoardMembership?.reorder_columns || currentBoardMembership?.edit_columns || currentBoardIsCreator(); }
   function canViewAllTasks() { return ['admin','chief','lead'].includes(currentUser?.role) || currentBoardMembership?.view_all_tasks || currentBoardIsCreator(); }
   function canChangeRoles() { return ['admin','chief','lead'].includes(currentUser?.role); }
   function isSpecialist() { return currentUser?.role === 'specialist'; }
