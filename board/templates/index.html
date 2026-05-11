@@ -596,6 +596,15 @@ if (window.location.pathname === '/main/' && !window.location.search.includes('b
       }
     }
 
+    const filterUserSelect = document.getElementById('filterUserSelect');
+    if (filterUserSelect) {
+      filterUserSelect.style.display = canViewAllTasks() ? 'inline-block' : 'none';
+      if (currentFilter === 'user' && !canViewAllTasks()) {
+        currentFilter = 'my';
+        document.getElementById('filterMy')?.classList.add('active');
+      }
+    }
+
     const systemNameSection = document.getElementById('systemNameSection');
     if (systemNameSection) {
       systemNameSection.style.display = canRenameSystem() ? 'block' : 'none';
@@ -774,6 +783,7 @@ async function loadBoards() {
 
   function setFilter(type, userId) {
     if (type === 'all' && !canViewAllTasks()) return;
+    if (type === 'user' && !canViewAllTasks()) return;
     currentFilter = type; filterUserId = userId ? parseInt(userId) : null;
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     if (type === 'my') document.getElementById('filterMy')?.classList.add('active');
@@ -837,7 +847,7 @@ async function loadBoards() {
           <span class="column-title">${col.name}</span>
           <span class="column-count">${colTasks.length}</span>
           <div class="column-actions">
-            ${canManage()?`<button class="col-btn" onclick="event.stopPropagation();openEditColumn(${col.id},'${escHtml(col.name)}','${col.color||'#E8E2D8'}')">✎</button>`:''}
+            ${canCreateColumn()?`<button class="col-btn" onclick="event.stopPropagation();openEditColumn(${col.id},'${escHtml(col.name)}','${col.color||'#E8E2D8'}')">✎</button>`:''}
             ${canCreateColumn()?`<button class="col-btn" onclick="event.stopPropagation();deleteColumn(${col.id})" style="color:#E24B4A;">✕</button>`:''}
           </div>
         </div>
@@ -845,7 +855,7 @@ async function loadBoards() {
           ${colTasks.map(t => renderTask(t, cardColor, cardOp)).join('')}
         </div>
         <button class="btn-add-task" onclick="openAddTask(${col.id})">+ Добавить задачу</button>`;
-      if (canManage()) {
+      if (canReorderColumns()) {
         colEl.setAttribute('draggable','true');
         colEl.addEventListener('dragstart', onColDragStart);
         colEl.addEventListener('dragend', onColDragEnd);
@@ -1403,6 +1413,7 @@ function openAddColumn() {
 }
 
 function openEditColumn(id, name, color) {
+    if (!canCreateColumn()) return;
     if (!currentBoardId) {
         showNotification('Сначала выберите доску', 'error');
         return;
@@ -1436,6 +1447,7 @@ async function saveColumn() {
 }
 
   async function deleteColumn(colId) {
+    if (!canCreateColumn()) return;
     if (!confirm('Удалить колонку? Все задачи в ней тоже будут удалены.')) return;
     await fetch(`${API}/columns/${colId}/`, {method:'DELETE', headers: authHeaders()});
     loadBoard();

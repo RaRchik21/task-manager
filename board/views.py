@@ -25,11 +25,11 @@ User = get_user_model()
 @csrf_exempt
 def create_test_users(request):
     users_data = [
-        {'username': 'TestMS', 'password': 'TestMS1234@weq', 'role': 'junior'},
-        {'username': 'TestSpec', 'password': 'TestSpec1234@weq', 'role': 'specialist'},
-        {'username': 'TestVS', 'password': 'TestVS1234@weq', 'role': 'lead'},
-        {'username': 'TestGS', 'password': 'TestGS1234@weq', 'role': 'chief'},
-        {'username': 'TestSS', 'password': 'TestSS1234@weq', 'role': 'senior'},
+        {'username': 'TestMS', 'password': 'qweqwe', 'role': 'junior'},
+        {'username': 'TestSpec', 'password': 'qweqwe', 'role': 'specialist'},
+        {'username': 'TestVS', 'password': 'qweqwe', 'role': 'lead'},
+        {'username': 'TestGS', 'password': 'qweqwe', 'role': 'chief'},
+        {'username': 'TestSS', 'password': 'qweqwe', 'role': 'senior'},
     ]
     
     results = []
