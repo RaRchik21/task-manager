@@ -79,9 +79,9 @@
         <div class="page-subtitle">Здесь отображаются все доступные проекты. Создавайте новые доски и переходите на нужные проекты одним кликом.</div>
       </div>
       <div class="header-actions">
-        <a href="/structure/" class="btn" style="text-decoration:none;">🏢 Структура</a>
+        <a href="/structure/" class="btn" style="text-decoration:none;">🏢 Команда</a>
         <button class="btn" onclick="openGlobalUsers()">👥 Пользователи</button>
-        <button class="btn" id="boardsDashboardButton" onclick="openBoardsDashboard()" style="display:none;">📊 Дашборд</button>
+        <button class="btn" id="boardsDashboardButton" onclick="openBoardsDashboard()" style="display:none;">📊 Статистика</button>
         <div id="currentUserInfo" style="font-size:14px;color:#6E6A61;align-self:center;"></div>
         <button class="btn create-board" onclick="openBoardModal()">+ Создать доску</button>
         <button class="btn logout-btn" onclick="logout()">Выйти из аккаунта</button>
@@ -103,11 +103,11 @@
       <label>Приватность</label>
       <select id="boardPrivacy">
         <option value="public">Публичная (видят все)</option>
-        <option value="private">Приватная (только участники)</option>
+        <option value="private">Приватная (видят только участники)</option>
       </select>
-      <label>Участники (редакторы)</label>
+      <label>Редакторы</label>
       <select id="boardParticipants" multiple></select>
-      <label>Зрители</label>
+      <label>Зрители (только просмотр)</label>
       <select id="boardViewers" multiple></select>
       <div class="modal-buttons">
         <button class="modal-cancel" onclick="closeBoardModal()">Отмена</button>
@@ -152,7 +152,7 @@
     let boardUsers = [];
     let editingBoardId = null;
     let allBoards = [];
-    let systemName = 'Task Manager';
+    let systemName = 'Task Tracker';
 
     async function init() {
       await loadBoardSettings();
@@ -222,12 +222,21 @@
         <div style="width:360px;background:white;border-radius:24px;padding:32px;box-shadow:0 20px 50px rgba(0,0,0,0.08);">
           <h1 style="font-size:24px;margin-bottom:8px;">Войти</h1>
           <p style="color:#666;margin-bottom:18px;">Введите логин и пароль для доступа к доскам</p>
-          <input id="loginUsername" placeholder="Логин" style="width:100%;padding:12px 14px;border:1px solid #ccc;border-radius:14px;margin-bottom:12px;" />
-          <input id="loginPassword" type="password" placeholder="Пароль" style="width:100%;padding:12px 14px;border:1px solid #ccc;border-radius:14px;margin-bottom:18px;" />
+          <input id="loginUsername" placeholder="Логин" onkeydown="if(event.key==='Enter')login()" style="width:100%;padding:12px 14px;border:1px solid #ccc;border-radius:14px;margin-bottom:12px;" />
+          <div style="position:relative;margin-bottom:18px;">
+            <input id="loginPassword" type="password" placeholder="Пароль" onkeydown="if(event.key==='Enter')login()" style="width:100%;padding:12px 14px;padding-right:44px;border:1px solid #ccc;border-radius:14px;" />
+            <button type="button" onclick="togglePasswordVisibility()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:#666;cursor:pointer;font-size:16px;">👁</button>
+          </div>
           <button onclick="login()" style="width:100%;padding:12px 14px;border:none;border-radius:14px;background:#444;color:#fff;font-size:15px;cursor:pointer;">Войти</button>
           <div id="loginError" style="color:#993C1D;margin-top:12px;display:none;">Неверный логин или пароль</div>
         </div>
       </div>`;
+    }
+
+    function togglePasswordVisibility() {
+      const input = document.getElementById('loginPassword');
+      if (!input) return;
+      input.type = input.type === 'password' ? 'text' : 'password';
     }
 
     async function login() {

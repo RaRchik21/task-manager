@@ -191,15 +191,19 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         tg = self.request.query_params.get('tg', None)
-        
+        org_chart = self.request.query_params.get('org_chart', None)
+
         if user.role in ['admin', 'chief', 'lead']:
+            qs = User.objects.exclude(role='admin')
+        elif org_chart:
+            # Только для органиграммы — все видимые пользователи, но без приватных данных
             qs = User.objects.exclude(role='admin')
         else:
             qs = User.objects.filter(id=user.id)
-        
+
         if tg:
             qs = qs.filter(telegram_username=tg)
-        
+
         return qs
 
     def partial_update(self, request, *args, **kwargs):

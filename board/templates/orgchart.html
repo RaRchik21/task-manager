@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Органиграмма</title>
+  <title>Команда</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -154,9 +154,9 @@
 <body>
 
 <header>
-  <h1 id="pageTitle">Органиграмма</h1>
+  <h1 id="pageTitle">Команда</h1>
   <div class="header-right">
-    <a href="/boards" class="header-btn">← К списку</a>
+    <a href="/boards" class="header-btn">← Вернуться</a>
   </div>
 </header>
 
@@ -263,7 +263,7 @@
       return;
     }
     try {
-      const res = await fetch(`${API}/users/`, { headers: authHeaders() });
+      const res = await fetch(`${API}/users/?org_chart=true`, { headers: authHeaders() });
       if (res.status === 401) {
         window.location.href = '/main';
         return;

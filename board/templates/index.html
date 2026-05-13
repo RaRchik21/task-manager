@@ -287,7 +287,7 @@
 <!-- ══════════════ ЛОГИН ══════════════ -->
 <div class="login-screen" id="loginScreen">
   <div class="login-card">
-    <h1 id="loginTitle">Task Manager</h1>
+    <h1 id="loginTitle">Task Tracker</h1>
     <p>Войдите чтобы продолжить</p>
     <input type="text" id="loginUsername" placeholder="Логин" />
     <input type="password" id="loginPassword" placeholder="Пароль" onkeydown="if(event.key==='Enter')login()" />
@@ -299,14 +299,14 @@
 <!-- ══════════════ ПРИЛОЖЕНИЕ ══════════════ -->
 <div id="app" style="display:none;">
   <header>
-    <h1 id="systemName">Task Manager</h1>
+    <h1 id="systemName">Task Tracker</h1>
     <div class="header-center">
       <div class="search-wrap">
         <span class="search-icon">🔍</span>
         <input class="search-input" id="searchInput" placeholder="Найти задачу..." oninput="renderBoard(allColumns, allTasks)" />
       </div>
       <button class="header-btn" onclick="toggleBoardChat()" style="position:relative;">💬 Чат<span class="notif-badge" id="chatHeaderBadge">0</span></button>
-      <a class="header-btn" href="/boards/" style="text-decoration:none;">Все доски</a>
+      <a class="header-btn" href="/boards/" style="text-decoration:none;">На главную</a>
     </div>
     <div class="header-right">
       <span class="user-badge" id="userBadge"></span>
@@ -871,7 +871,8 @@ async function loadBoards() {
 
   function renderTask(task, cardColor, cardOp) {
     const col = allColumns.find(c => c.id === task.column);
-    const isDone = col?.name?.toLowerCase() === 'выполнено';
+    const doneNames = ['выполнено', 'done', 'готово', 'сделано'];
+    const isDone = doneNames.includes(col?.name?.toLowerCase());
     const deadline = task.deadline && !isDone ? deadlineInfo(task.deadline) : null;
     const bg = hexToRgba(cardColor, cardOp);
     const isOtherUser = task.created_by !== currentUser?.id;
@@ -905,13 +906,37 @@ async function loadBoards() {
       </div>`;
   }
 
+  function parseDeadlineDate(dateStr) {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      const [year, month, day] = dateStr.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    }
+    return new Date(dateStr);
+  }
+
+  function decline(num, forms) {
+    const n = Math.abs(num) % 100;
+    if (n >= 11 && n <= 19) return forms[2];
+    const last = n % 10;
+    if (last === 1) return forms[0];
+    if (last >= 2 && last <= 4) return forms[1];
+    return forms[2];
+  }
+
   function deadlineInfo(dateStr) {
-    const today = new Date(); today.setHours(0,0,0,0);
-    const d = new Date(dateStr); const diff = Math.ceil((d-today)/86400000);
-    if (diff<0) return {cls:'deadline-overdue',label:'Просрочено'};
-    if (diff===0) return {cls:'deadline-soon',label:'Сегодня'};
-    if (diff<=2) return {cls:'deadline-soon',label:`Через ${diff} дн.`};
-    return {cls:'deadline-ok',label:d.toLocaleDateString('ru')};
+    const now = new Date();
+    const due = parseDeadlineDate(dateStr);
+    const diffMs = due.getTime() - now.getTime();
+    if (diffMs < 0) return {cls:'deadline-overdue', label:'Просрочено'};
+    const hours = Math.floor(diffMs / 3600000);
+    const days = Math.floor(diffMs / 86400000);
+    if (hours < 24) {
+      if (hours === 0) return {cls:'deadline-soon', label:'Менее часа'};
+      return {cls:'deadline-soon', label:`Через ${hours} ${decline(hours, ['час','часа','часов'])}`};
+    }
+    if (days === 0) return {cls:'deadline-soon', label:'Сегодня'};
+    if (days <= 2) return {cls:'deadline-soon', label:`Через ${days} ${decline(days, ['день','дня','дней'])}`};
+    return {cls:'deadline-ok', label:due.toLocaleDateString('ru')};
   }
 
 async function sendBoardMessage() {
@@ -1619,22 +1644,22 @@ async function openStats() {
   // ══════════════════════════════════════
 
   const themes = {
-    sand:     {grad:'linear-gradient(135deg,#F5EDD6,#E8CDA0)',header:'#EDE8DF',card:'#FFFFFF',g1:'#F5EDD6',g2:'#E8CDA0',angle:135},
-    lavender: {grad:'linear-gradient(135deg,#EEF0FB,#D8D2F0)',header:'#E4E0F7',card:'#FFFFFF',g1:'#EEF0FB',g2:'#D8D2F0',angle:135},
-    mint:     {grad:'linear-gradient(135deg,#E8F5F0,#BFE2D8)',header:'#D4EDE6',card:'#FFFFFF',g1:'#E8F5F0',g2:'#BFE2D8',angle:135},
-    peach:    {grad:'linear-gradient(135deg,#FDF0F0,#F5CEBF)',header:'#F9E0D8',card:'#FFF8F5',g1:'#FDF0F0',g2:'#F5CEBF',angle:135},
-    steel:    {grad:'linear-gradient(135deg,#EEF2F7,#C8D6E8)',header:'#DDE5F0',card:'#FFFFFF',g1:'#EEF2F7',g2:'#C8D6E8',angle:135},
-    night:    {grad:'linear-gradient(135deg,#1A1A2E,#0F3460)',header:'#0F3460',card:'#1E2A45',g1:'#1A1A2E',g2:'#0F3460',angle:135},
-    beige:    {grad:'linear-gradient(135deg,#F5F0E8,#E8E2D8)',header:'#EDE8DF',card:'#FFFFFF',g1:'#F5F0E8',g2:'#E8E2D8',angle:135},
-    blue:     {grad:'linear-gradient(135deg,#F0F4F8,#DDE8F0)',header:'#E8EEF5',card:'#FFFFFF',g1:'#F0F4F8',g2:'#DDE8F0',angle:135},
-    rose:     {grad:'linear-gradient(135deg,#FAF0F0,#F0DEDE)',header:'#F5E8E8',card:'#FFF8F8',g1:'#FAF0F0',g2:'#F0DEDE',angle:135},
+    sand:     {bg:'#F5EDD6', header:'#EDE8DF', card:'#FFFFFF', g1:'#F5EDD6', g2:'#E8CDA0', angle:135},
+    lavender: {bg:'#EEF0FB', header:'#E4E0F7', card:'#FFFFFF', g1:'#EEF0FB', g2:'#D8D2F0', angle:135},
+    mint:     {bg:'#E8F5F0', header:'#D4EDE6', card:'#FFFFFF', g1:'#E8F5F0', g2:'#BFE2D8', angle:135},
+    peach:    {bg:'#FDF0F0', header:'#F9E0D8', card:'#FFF8F5', g1:'#FDF0F0', g2:'#F5CEBF', angle:135},
+    steel:    {bg:'#EEF2F7', header:'#DDE5F0', card:'#FFFFFF', g1:'#EEF2F7', g2:'#C8D6E8', angle:135},
+    night:    {bg:'#1A1A2E', header:'#0F3460', card:'#1E2A45', g1:'#1A1A2E', g2:'#0F3460', angle:135},
+    beige:    {bg:'#F5F0E8', header:'#EDE8DF', card:'#FFFFFF', g1:'#F5F0E8', g2:'#E8E2D8', angle:135},
+    blue:     {bg:'#F0F4F8', header:'#E8EEF5', card:'#FFFFFF', g1:'#F0F4F8', g2:'#DDE8F0', angle:135},
+    rose:     {bg:'#FAF0F0', header:'#F5E8E8', card:'#FFF8F8', g1:'#FAF0F0', g2:'#F0DEDE', angle:135},
   };
 
   function toggleSettings() { document.getElementById('settingsPanel').classList.toggle('open'); }
 
   async function applyTheme(name) {
     const t=themes[name]; if (!t) return;
-    document.body.style.background=t.grad;
+    if (t.bg) document.body.style.backgroundColor = t.bg;
     document.getElementById('gradColor1').value=t.g1; document.getElementById('gradColor2').value=t.g2;
     document.getElementById('gradAngle').value=t.angle; document.getElementById('gradAngleVal').textContent=t.angle+'°';
     document.getElementById('colorHeader').value=t.header; document.getElementById('colorCard').value=t.card;
@@ -1645,9 +1670,8 @@ async function openStats() {
 
   async function applyGradient() {
     const g1=document.getElementById('gradColor1').value; const g2=document.getElementById('gradColor2').value; const angle=document.getElementById('gradAngle').value;
-    const grad=`linear-gradient(${angle}deg,${g1},${g2})`;
-    document.body.style.background=grad;
-    const c=JSON.parse(localStorage.getItem('boardTheme')||'{}'); c.grad=grad; c.g1=g1; c.g2=g2; c.angle=parseInt(angle); saveTheme(c);
+    document.body.style.backgroundColor = g1;
+    const c=JSON.parse(localStorage.getItem('boardTheme')||'{}'); c.bg=g1; c.g1=g1; c.g2=g2; c.angle=parseInt(angle); saveTheme(c);
     document.querySelectorAll('.theme-swatch').forEach(s=>s.classList.remove('active'));
   }
 
@@ -1661,8 +1685,8 @@ async function openStats() {
   }
 
   function applyColors(t) {
-    if (t.grad) document.body.style.background=t.grad;
-    else if (t.bg) document.body.style.backgroundColor=t.bg;
+    if (t.bg) document.body.style.backgroundColor=t.bg;
+    else if (t.grad) document.body.style.background=t.grad;
     if (t.header) { const op=(t.opacityHeader||85)/100; const h=document.querySelector('header'); if (h) h.style.background=hexToRgba(t.header,op); }
     renderBoard(allColumns,allTasks);
   }
@@ -1672,7 +1696,8 @@ async function openStats() {
   function loadTheme() {
     const saved=localStorage.getItem('boardTheme'); if (!saved) return;
     const t=JSON.parse(saved);
-    if (t.grad) document.body.style.background=t.grad; else if (t.bg) document.body.style.backgroundColor=t.bg;
+    if (t.bg) document.body.style.backgroundColor=t.bg;
+    else if (t.grad) document.body.style.background=t.grad;
     if (t.header) { const h=document.querySelector('header'); if (h) h.style.background=hexToRgba(t.header,(t.opacityHeader||85)/100); }
     if (t.g1&&document.getElementById('gradColor1')) document.getElementById('gradColor1').value=t.g1;
     if (t.g2&&document.getElementById('gradColor2')) document.getElementById('gradColor2').value=t.g2;
@@ -1888,7 +1913,7 @@ async function changeBoardMemberRole(boardId, userId, newRole) {
   <div class="panel-body">
     <div class="settings-section" id="systemNameSection">
       <label>Название системы</label>
-      <input type="text" class="settings-input" id="systemNameInput" placeholder="Task Manager" />
+      <input type="text" class="settings-input" id="systemNameInput" placeholder="Task Tracker" />
       <button class="btn-save-setting" id="systemNameSaveButton" onclick="saveSystemName()">Сохранить</button>
     </div>
     <div class="settings-section">
