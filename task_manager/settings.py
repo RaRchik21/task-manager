@@ -17,9 +17,7 @@ ALLOWED_HOSTS = ['*']
 
 # Добавьте CSRF_TRUSTED_ORIGINS для всех платформ
 CSRF_TRUSTED_ORIGINS = [
-    'https://*.railway.app',
-    'https://*.vercel.app',
-    'https://*.pythonanywhere.com',
+    "https://task-tracker-alg.vibenest.net",
 ]
 
 # 2. Доверенные источники для CSRF (самое важное для ошибки 403)
