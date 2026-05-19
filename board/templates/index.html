@@ -1644,22 +1644,22 @@ async function openStats() {
   // ══════════════════════════════════════
 
   const themes = {
-    sand:     {bg:'#F5EDD6', header:'#EDE8DF', card:'#FFFFFF', g1:'#F5EDD6', g2:'#E8CDA0', angle:135},
-    lavender: {bg:'#EEF0FB', header:'#E4E0F7', card:'#FFFFFF', g1:'#EEF0FB', g2:'#D8D2F0', angle:135},
-    mint:     {bg:'#E8F5F0', header:'#D4EDE6', card:'#FFFFFF', g1:'#E8F5F0', g2:'#BFE2D8', angle:135},
-    peach:    {bg:'#FDF0F0', header:'#F9E0D8', card:'#FFF8F5', g1:'#FDF0F0', g2:'#F5CEBF', angle:135},
-    steel:    {bg:'#EEF2F7', header:'#DDE5F0', card:'#FFFFFF', g1:'#EEF2F7', g2:'#C8D6E8', angle:135},
-    night:    {bg:'#1A1A2E', header:'#0F3460', card:'#1E2A45', g1:'#1A1A2E', g2:'#0F3460', angle:135},
-    beige:    {bg:'#F5F0E8', header:'#EDE8DF', card:'#FFFFFF', g1:'#F5F0E8', g2:'#E8E2D8', angle:135},
-    blue:     {bg:'#F0F4F8', header:'#E8EEF5', card:'#FFFFFF', g1:'#F0F4F8', g2:'#DDE8F0', angle:135},
-    rose:     {bg:'#FAF0F0', header:'#F5E8E8', card:'#FFF8F8', g1:'#FAF0F0', g2:'#F0DEDE', angle:135},
+    sand:     {grad:'linear-gradient(135deg,#F5EDD6,#E8CDA0)',header:'#EDE8DF',card:'#FFFFFF',g1:'#F5EDD6',g2:'#E8CDA0',angle:135},
+    lavender: {grad:'linear-gradient(135deg,#EEF0FB,#D8D2F0)',header:'#E4E0F7',card:'#FFFFFF',g1:'#EEF0FB',g2:'#D8D2F0',angle:135},
+    mint:     {grad:'linear-gradient(135deg,#E8F5F0,#BFE2D8)',header:'#D4EDE6',card:'#FFFFFF',g1:'#E8F5F0',g2:'#BFE2D8',angle:135},
+    peach:    {grad:'linear-gradient(135deg,#FDF0F0,#F5CEBF)',header:'#F9E0D8',card:'#FFF8F5',g1:'#FDF0F0',g2:'#F5CEBF',angle:135},
+    steel:    {grad:'linear-gradient(135deg,#EEF2F7,#C8D6E8)',header:'#DDE5F0',card:'#FFFFFF',g1:'#EEF2F7',g2:'#C8D6E8',angle:135},
+    night:    {grad:'linear-gradient(135deg,#1A1A2E,#0F3460)',header:'#0F3460',card:'#1E2A45',g1:'#1A1A2E',g2:'#0F3460',angle:135},
+    beige:    {grad:'linear-gradient(135deg,#F5F0E8,#E8E2D8)',header:'#EDE8DF',card:'#FFFFFF',g1:'#F5F0E8',g2:'#E8E2D8',angle:135},
+    blue:     {grad:'linear-gradient(135deg,#F0F4F8,#DDE8F0)',header:'#E8EEF5',card:'#FFFFFF',g1:'#F0F4F8',g2:'#DDE8F0',angle:135},
+    rose:     {grad:'linear-gradient(135deg,#FAF0F0,#F0DEDE)',header:'#F5E8E8',card:'#FFF8F8',g1:'#FAF0F0',g2:'#F0DEDE',angle:135},
   };
 
   function toggleSettings() { document.getElementById('settingsPanel').classList.toggle('open'); }
 
   async function applyTheme(name) {
     const t=themes[name]; if (!t) return;
-    if (t.bg) document.body.style.backgroundColor = t.bg;
+    document.body.style.background=t.grad;
     document.getElementById('gradColor1').value=t.g1; document.getElementById('gradColor2').value=t.g2;
     document.getElementById('gradAngle').value=t.angle; document.getElementById('gradAngleVal').textContent=t.angle+'°';
     document.getElementById('colorHeader').value=t.header; document.getElementById('colorCard').value=t.card;
@@ -1670,8 +1670,9 @@ async function openStats() {
 
   async function applyGradient() {
     const g1=document.getElementById('gradColor1').value; const g2=document.getElementById('gradColor2').value; const angle=document.getElementById('gradAngle').value;
-    document.body.style.backgroundColor = g1;
-    const c=JSON.parse(localStorage.getItem('boardTheme')||'{}'); c.bg=g1; c.g1=g1; c.g2=g2; c.angle=parseInt(angle); saveTheme(c);
+    const grad=`linear-gradient(${angle}deg,${g1},${g2})`;
+    document.body.style.background=grad;
+    const c=JSON.parse(localStorage.getItem('boardTheme')||'{}'); c.grad=grad; c.g1=g1; c.g2=g2; c.angle=parseInt(angle); saveTheme(c);
     document.querySelectorAll('.theme-swatch').forEach(s=>s.classList.remove('active'));
   }
 
@@ -1685,8 +1686,8 @@ async function openStats() {
   }
 
   function applyColors(t) {
-    if (t.bg) document.body.style.backgroundColor=t.bg;
-    else if (t.grad) document.body.style.background=t.grad;
+    if (t.grad) document.body.style.background=t.grad;
+    else if (t.bg) document.body.style.backgroundColor=t.bg;
     if (t.header) { const op=(t.opacityHeader||85)/100; const h=document.querySelector('header'); if (h) h.style.background=hexToRgba(t.header,op); }
     renderBoard(allColumns,allTasks);
   }
@@ -1696,8 +1697,7 @@ async function openStats() {
   function loadTheme() {
     const saved=localStorage.getItem('boardTheme'); if (!saved) return;
     const t=JSON.parse(saved);
-    if (t.bg) document.body.style.backgroundColor=t.bg;
-    else if (t.grad) document.body.style.background=t.grad;
+    if (t.grad) document.body.style.background=t.grad; else if (t.bg) document.body.style.backgroundColor=t.bg;
     if (t.header) { const h=document.querySelector('header'); if (h) h.style.background=hexToRgba(t.header,(t.opacityHeader||85)/100); }
     if (t.g1&&document.getElementById('gradColor1')) document.getElementById('gradColor1').value=t.g1;
     if (t.g2&&document.getElementById('gradColor2')) document.getElementById('gradColor2').value=t.g2;
