@@ -18,6 +18,7 @@ ALLOWED_HOSTS = ['*']
 # Добавьте CSRF_TRUSTED_ORIGINS для всех платформ
 CSRF_TRUSTED_ORIGINS = [
     "https://task-tracker-alg.vibenest.net",
+    "http://task-tracker-alg.vibenest.net",
 ]
 
 
