@@ -20,8 +20,6 @@ CSRF_TRUSTED_ORIGINS = [
     "https://task-tracker-alg.vibenest.net",
 ]
 
-# 2. Доверенные источники для CSRF (самое важное для ошибки 403)
-CSRF_TRUSTED_ORIGINS = ['https://railway.app']
 
 # 3. Дополнительные настройки для работы через прокси Railway
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
