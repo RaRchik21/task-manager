@@ -891,7 +891,7 @@ async function loadBoards() {
         <div class="tasks" id="tasks-${col.id}">
           ${colTasks.map(t => renderTask(t, cardColor, cardOp)).join('')}
         </div>
-        <button class="btn-add-task" onclick="openAddTask(${col.id})">+ Добавить задачу</button>`;
+        ${ (isBoardEditor() || currentUser?.role === 'chief' || currentBoardIsCreator()) ? `<button class="btn-add-task" onclick="openAddTask(${col.id})">+ Добавить задачу</button>` : '' }`;
       if (canReorderColumns()) {
         colEl.setAttribute('draggable','true');
         colEl.addEventListener('dragstart', onColDragStart);
@@ -1115,6 +1115,11 @@ function startBoardChatResize(event) {
   // ══════════════════════════════════════
 
   function openAddTask(columnId) {
+    // Проверка прав: только редактор доски или главный специалист/создатель могут добавлять задачи
+    if (!(isBoardEditor() || currentUser?.role === 'chief' || currentBoardIsCreator())) {
+      showNotification('Нет прав на добавление задач в этой доске', 'error');
+      return;
+    }
     currentColumnId = columnId; editingTaskId = null; selectedAssignees = [];
     currentTaskDelegator = null;
     document.getElementById('taskModalTitle').textContent = 'Новая задача';
@@ -1135,8 +1140,14 @@ function startBoardChatResize(event) {
     const task = allTasks.find(t => t.id === taskId);
     if (!task) return;
     editingTaskId = taskId; currentColumnId = task.column;
-    const delegator = task.assigned_by || task.assigned_by_id || null;
-    currentTaskDelegator = delegator;
+    // Вычисляем id пользователя, который делегировал задачу (если есть)
+    let delegatorId = null;
+    if (task.assigned_by) {
+      if (typeof task.assigned_by === 'object') delegatorId = task.assigned_by.id || null;
+      else delegatorId = task.assigned_by;
+    }
+    delegatorId = delegatorId || task.assigned_by_id || task.assigned_by_user_id || task.assigned_by_user || null;
+    currentTaskDelegator = delegatorId ? Number(delegatorId) : null;
     selectedAssignees = (task.assigned_to||[]).map(u => ({id:u.id, name:u.full_name||u.username}));
     document.getElementById('taskModalTitle').textContent = 'Редактировать задачу';
     document.getElementById('taskTitle').value = task.title;
@@ -1249,11 +1260,11 @@ async function saveTask() {
 
   function removeAssignee(userId) {
     // Запретить самоудаление исполнителя, если задача была делегирована другому пользователю.
-    if (userId === currentUser?.id && currentTaskDelegator && Number(currentTaskDelegator) !== Number(currentUser?.id)) {
+    if (Number(userId) === Number(currentUser?.id) && currentTaskDelegator && Number(currentTaskDelegator) !== Number(currentUser?.id)) {
       showNotification('Нельзя удалить себя — удалять может только делегатор', 'error');
       return;
     }
-    selectedAssignees = selectedAssignees.filter(a => a.id !== userId);
+    selectedAssignees = selectedAssignees.filter(a => Number(a.id) !== Number(userId));
     renderAssigneesList(); fillAssigneeSelect();
   }
 
