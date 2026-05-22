@@ -5,17 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Task Tracker</title>
   <style>
+    html { font-size: 120%; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background-color: #F5F0E8; color: #2C2C2A; min-height: 100vh; }
 
     /* ── ШАПКА ── */
     header { background: rgba(237,232,223,0.85); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(211,209,199,0.6); padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
-    header h1 { font-size: 16px; font-weight: 700; color: #2C2C2A; letter-spacing: -0.3px; cursor: default; }
+    header h1 { font-size: 16px; font-weight: 700; color: #2C2C2A; letter-spacing: -0.3px; cursor: pointer; }
     .header-center { display: flex; align-items: center; gap: 8px; flex: 1; max-width: 320px; margin: 0 24px; }
     .search-input { width: 100%; padding: 6px 12px 6px 32px; border: 1px solid rgba(211,209,199,0.8); border-radius: 20px; font-size: 13px; background: rgba(255,255,255,0.6); outline: none; transition: all 0.2s; }
     .search-input:focus { background: white; border-color: #888780; }
     .search-wrap { position: relative; flex: 1; }
     .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #888780; }
+    .search-clear { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #888780; background: transparent; border: none; cursor: pointer; display:none; padding:4px 6px; border-radius:8px; }
+    .search-clear:hover { background: rgba(0,0,0,0.04); color: #444441; }
     .header-right { display: flex; align-items: center; gap: 8px; }
     .user-badge { background: rgba(211,209,199,0.7); border-radius: 20px; padding: 4px 12px; font-size: 13px; color: #444441; }
     .header-btn { background: rgba(255,255,255,0.5); border: 1px solid rgba(211,209,199,0.8); border-radius: 8px; padding: 4px 12px; font-size: 13px; color: #5F5E5A; cursor: pointer; transition: all 0.15s; text-decoration: none; display: inline-flex; align-items: center; }
@@ -225,7 +228,8 @@
     .user-info { flex: 1; }
     .user-name { font-size: 14px; font-weight: 500; color: #2C2C2A; }
     .user-meta { font-size: 12px; color: #888780; }
-    .role-select { font-size: 12px; padding: 4px 8px; border: 1px solid rgba(211,209,199,0.8); border-radius: 6px; background: white; color: #444441; cursor: pointer; }
+    .role-select { font-size: 12px; padding: 4px 6px; border: 1px solid rgba(211,209,199,0.8); border-radius: 6px; background: white; color: #444441; cursor: pointer; }
+    .compact-select { padding: 6px 8px !important; font-size: 13px !important; border-radius: 8px !important; min-width: 140px; }
 
     /* ── АРХИВ ── */
     .archive-item { padding: 12px 24px; border-bottom: 1px solid rgba(211,209,199,0.3); }
@@ -252,6 +256,20 @@
     .activity-bar:hover { background: rgba(95,94,90,0.4); }
     .activity-label { flex: 1; font-size: 10px; color: #888780; text-align: center; min-width: 32px; }
     .priority-badge { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 20px; font-size: 13px; }
+    /* Адаптив */
+    @media (max-width: 900px) {
+      header { padding: 0 12px; }
+      .header-center { max-width: 220px; }
+      .board-wrapper { padding: 12px; }
+      .column { width: 100%; min-width: auto; }
+      .board { flex-direction: column; gap: 12px; }
+      .board-chat-panel { right: 12px; left: 12px; width: auto; max-width: calc(100% - 24px); }
+    }
+    @media (max-width: 480px) {
+      .search-input { font-size: 12px; }
+      .header-btn { padding: 6px 8px; font-size: 12px; }
+      .modal { width: 92vw; padding: 16px; }
+    }
   </style>
 </head>
 <body>
@@ -304,6 +322,7 @@
       <div class="search-wrap">
         <span class="search-icon">🔍</span>
         <input class="search-input" id="searchInput" placeholder="Найти задачу..." oninput="renderBoard(allColumns, allTasks)" />
+        <button class="search-clear" id="searchClear" aria-label="Очистить поиск" onclick="clearSearch()">✕</button>
       </div>
       <button class="header-btn" onclick="toggleBoardChat()" style="position:relative;">💬 Чат<span class="notif-badge" id="chatHeaderBadge">0</span></button>
       <a class="header-btn" href="/boards/" style="text-decoration:none;">На главную</a>
@@ -656,6 +675,9 @@ async function showApp() {
     await loadBoard();
     loadUnreadCount();
     initBoardChatInteractions();
+    initGlobalTypingCapture();
+    window.addEventListener('resize', adjustLayout);
+    adjustLayout();
     if (boardInterval) clearInterval(boardInterval);
     if (notifInterval) clearInterval(notifInterval);
     boardInterval = setInterval(loadBoard, 5000);
@@ -865,7 +887,11 @@ async function loadBoards() {
       board.appendChild(colEl);
     });
     board.appendChild(btnAdd);
-    document.querySelectorAll('.task-card').forEach(card => { card.addEventListener('dragstart', onDragStart); card.addEventListener('dragend', onDragEnd); });
+    document.querySelectorAll('.task-card').forEach(card => {
+      card.addEventListener('dragstart', onDragStart);
+      card.addEventListener('dragend', onDragEnd);
+      card.addEventListener('dblclick', (e) => { const id = parseInt(card.dataset.taskId); if (id) openEditTask(id); });
+    });
     document.querySelectorAll('.column .tasks').forEach(zone => { zone.addEventListener('dragover', onDragOver); zone.addEventListener('dragleave', onDragLeave); zone.addEventListener('drop', onDrop); });
   }
 
@@ -1646,12 +1672,10 @@ async function openStats() {
   const themes = {
     sand:     {grad:'linear-gradient(135deg,#F5EDD6,#E8CDA0)',header:'#EDE8DF',card:'#FFFFFF',g1:'#F5EDD6',g2:'#E8CDA0',angle:135},
     lavender: {grad:'linear-gradient(135deg,#EEF0FB,#D8D2F0)',header:'#E4E0F7',card:'#FFFFFF',g1:'#EEF0FB',g2:'#D8D2F0',angle:135},
-    mint:     {grad:'linear-gradient(135deg,#E8F5F0,#BFE2D8)',header:'#D4EDE6',card:'#FFFFFF',g1:'#E8F5F0',g2:'#BFE2D8',angle:135},
     peach:    {grad:'linear-gradient(135deg,#FDF0F0,#F5CEBF)',header:'#F9E0D8',card:'#FFF8F5',g1:'#FDF0F0',g2:'#F5CEBF',angle:135},
     steel:    {grad:'linear-gradient(135deg,#EEF2F7,#C8D6E8)',header:'#DDE5F0',card:'#FFFFFF',g1:'#EEF2F7',g2:'#C8D6E8',angle:135},
-    night:    {grad:'linear-gradient(135deg,#1A1A2E,#0F3460)',header:'#0F3460',card:'#1E2A45',g1:'#1A1A2E',g2:'#0F3460',angle:135},
     beige:    {grad:'linear-gradient(135deg,#F5F0E8,#E8E2D8)',header:'#EDE8DF',card:'#FFFFFF',g1:'#F5F0E8',g2:'#E8E2D8',angle:135},
-    blue:     {grad:'linear-gradient(135deg,#F0F4F8,#DDE8F0)',header:'#E8EEF5',card:'#FFFFFF',g1:'#F0F4F8',g2:'#DDE8F0',angle:135},
+    
     rose:     {grad:'linear-gradient(135deg,#FAF0F0,#F0DEDE)',header:'#F5E8E8',card:'#FFF8F8',g1:'#FAF0F0',g2:'#F0DEDE',angle:135},
   };
 
@@ -1894,6 +1918,57 @@ async function changeBoardMemberRole(boardId, userId, newRole) {
     if (document.getElementById('dashboardModal')?.classList.contains('active')) return closeDashboard();
   }
 
+  // Очистить поле поиска
+  function clearSearch() {
+    const input = document.getElementById('searchInput');
+    if (!input) return;
+    input.value = '';
+    document.getElementById('searchClear').style.display = 'none';
+    renderBoard(allColumns, allTasks);
+    input.focus();
+  }
+
+  function adjustLayout() {
+    const mobile = window.innerWidth <= 900;
+    document.body.classList.toggle('mobile', mobile);
+  }
+
+  // Автофокус чата при наборе клавиш, когда панель чата открыта
+  function initGlobalTypingCapture() {
+    document.addEventListener('keydown', (e) => {
+      try {
+        const panel = document.getElementById('boardChatPanel');
+        if (!panel || !panel.classList.contains('open')) return;
+        const active = document.activeElement;
+        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) return;
+        if (e.ctrlKey || e.altKey || e.metaKey) return;
+        // Printable characters
+        if (e.key && e.key.length === 1) {
+          e.preventDefault();
+          const ta = document.getElementById('boardChatInput');
+          if (!ta) return;
+          ta.focus();
+          // Append the typed character at the end
+          ta.value = ta.value + e.key;
+          // Move caret to end
+          ta.selectionStart = ta.selectionEnd = ta.value.length;
+        }
+      } catch (err) { console.error(err); }
+    });
+
+    // Показ/скрытие крестика очистки поиска
+    const search = document.getElementById('searchInput');
+    const clearBtn = document.getElementById('searchClear');
+    if (search && clearBtn) {
+      const toggle = () => { clearBtn.style.display = search.value ? 'inline-block' : 'none'; };
+      search.addEventListener('input', toggle);
+      toggle();
+    }
+    // Клик по заголовку — переход на главную досок
+    const title = document.getElementById('systemName');
+    if (title) title.addEventListener('click', () => { window.location.href = '/boards/'; });
+  }
+
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
     closeTopModalOnEscape();
@@ -1921,12 +1996,10 @@ async function changeBoardMemberRole(boardId, userId, newRole) {
       <div class="theme-grid">
         <div class="theme-swatch" style="background:linear-gradient(135deg,#F5EDD6,#E8CDA0);" data-theme="sand" onclick="applyTheme('sand')"><span>Песок</span></div>
         <div class="theme-swatch" style="background:linear-gradient(135deg,#EEF0FB,#D8D2F0);" data-theme="lavender" onclick="applyTheme('lavender')"><span>Лаванда</span></div>
-        <div class="theme-swatch" style="background:linear-gradient(135deg,#E8F5F0,#BFE2D8);" data-theme="mint" onclick="applyTheme('mint')"><span>Мята</span></div>
         <div class="theme-swatch" style="background:linear-gradient(135deg,#FDF0F0,#F5CEBF);" data-theme="peach" onclick="applyTheme('peach')"><span>Персик</span></div>
         <div class="theme-swatch" style="background:linear-gradient(135deg,#EEF2F7,#C8D6E8);" data-theme="steel" onclick="applyTheme('steel')"><span>Сталь</span></div>
-        <div class="theme-swatch" style="background:linear-gradient(135deg,#1A1A2E,#0F3460);" data-theme="night" onclick="applyTheme('night')"><span style="color:rgba(255,255,255,0.7)">Ночь</span></div>
         <div class="theme-swatch" style="background:linear-gradient(135deg,#F5F0E8,#E8E2D8);" data-theme="beige" onclick="applyTheme('beige')"><span>Бежевая</span></div>
-        <div class="theme-swatch" style="background:linear-gradient(135deg,#F0F4F8,#DDE8F0);" data-theme="blue" onclick="applyTheme('blue')"><span>Голубая</span></div>
+        
         <div class="theme-swatch" style="background:linear-gradient(135deg,#FAF0F0,#F0DEDE);" data-theme="rose" onclick="applyTheme('rose')"><span>Розовая</span></div>
       </div>
     </div>

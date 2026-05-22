@@ -32,6 +32,10 @@
     .board-label { font-weight:700; color:#3B3A39; }
     .board-description { color:#6E6A61; line-height:1.6; }
     .board-actions { margin-top:auto; display:flex; gap:10px; flex-wrap:wrap; }
+    .board-actions .btn { flex: 1 1 140px; min-width: 120px; display: inline-flex; align-items: center; justify-content: center; padding: 12px 14px; }
+    .board-actions .btn.open-board { flex: 1 1 160px; }
+    /* ensure edit/delete buttons match size for private and public boards */
+    .board-actions .btn + .btn { }
     .board-actions .btn { background: rgba(68,68,68,0.08); color: #373330; }
     .board-actions .btn.open-board { width:100%; justify-content:center; padding:14px 16px; font-weight:700; }
     .board-card { min-height: 220px; }
@@ -42,7 +46,7 @@
     .modal h2 { margin-bottom:18px; font-size:20px; }
     .modal label { display:block; font-size:13px; color:#6E6A61; margin-bottom:8px; }
     .modal input, .modal textarea, .modal select { width:100%; padding:12px 14px; border:1px solid rgba(211,209,199,0.9); border-radius:14px; background:#fff; font-size:14px; margin-bottom:14px; font-family: inherit; }
-    .modal select { min-height: 120px; padding: 10px 12px; }
+    .modal select { min-height: auto; padding: 8px 10px; }
     .modal select[multiple] { padding: 8px 12px; }
     .modal select option { padding: 8px; }
     .modal-buttons { display:flex; justify-content:flex-end; gap:12px; }
@@ -53,7 +57,8 @@
     .user-info { flex: 1; }
     .user-name { font-size: 14px; font-weight: 500; color: #2C2C2A; }
     .user-meta { font-size: 12px; color: #888780; }
-    .role-select { font-size: 12px; padding: 4px 8px; border: 1px solid rgba(211,209,199,0.8); border-radius: 6px; background: white; color: #444441; cursor: pointer; }
+    .role-select { font-size: 12px; padding: 4px 6px; border: 1px solid rgba(211,209,199,0.8); border-radius: 6px; background: white; color: #444441; cursor: pointer; }
+    .compact-select { padding:6px 8px; font-size:13px; border-radius:8px; min-width:140px; }
     .custom-notification { position: fixed; bottom: 20px; right: 20px; padding: 12px 24px; border-radius: 10px; font-size: 14px; z-index: 10000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-weight: 500; animation: slideInError 0.3s ease; }
     .permission-note { display:inline-flex; margin-left:8px; padding:2px 8px; border-radius:999px; font-size:11px; color:#4D45D5; background:rgba(77,69,213,0.08); }
     .dashboard-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:18px; }
@@ -101,7 +106,7 @@
       <label>Описание</label>
       <textarea id="boardDescription" placeholder="Описание доски"></textarea>
       <label>Приватность</label>
-      <select id="boardPrivacy">
+      <select id="boardPrivacy" class="compact-select">
         <option value="public">Публичная (видят все)</option>
         <option value="private">Приватная (видят только участники)</option>
       </select>
