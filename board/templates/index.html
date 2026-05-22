@@ -86,7 +86,7 @@
     .task-card:active { cursor: grabbing; }
     .task-card.dragging { opacity: 0.4; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
     .task-card.other-user { border-left: 3px solid #9B8FD4; }
-    .task-card.chief-goal { border-left: 4px solid #E24B4A; background: linear-gradient(90deg, rgba(226,75,74,0.04) 0%, rgba(255,255,255,0.85) 100%); }
+    .task-card.chief-goal { border-left: 4px solid #E24B4A; background: #FFFFFF; }
     .priority-high { background: #E24B4A; }
     .priority-medium { background: #EF9F27; }
     .priority-low { background: #639922; }
@@ -531,6 +531,7 @@
   let mentionSearching = false;
   let mentionStart = 0;
   let currentBoardMembership = null;
+  let currentTaskDelegator = null;
   let allBoards = [];
   let replyToCommentId = null;
   let boardChatReplyToId = null;
@@ -591,11 +592,13 @@ if (window.location.pathname === '/main/' && !window.location.search.includes('b
   }
   function canRenameSystem() { return ['admin','chief','lead'].includes(currentUser?.role); }
   function canOpenBoardsDashboard() { return ['admin','chief','lead'].includes(currentUser?.role); }
-  function canManage() { return ['admin','chief','lead'].includes(currentUser?.role) || currentBoardMembership?.role === 'admin' || currentBoardIsCreator(); }
-  function canCreateColumn() { return ['admin','chief','lead'].includes(currentUser?.role) || currentBoardMembership?.edit_columns || currentBoardIsCreator(); }
-  function canReorderColumns() { return ['admin','chief','lead'].includes(currentUser?.role) || currentBoardMembership?.reorder_columns || currentBoardMembership?.edit_columns || currentBoardIsCreator(); }
-  function canViewAllTasks() { return ['admin','chief','lead'].includes(currentUser?.role) || currentBoardMembership?.view_all_tasks || currentBoardIsCreator(); }
-  function canChangeRoles() { return ['admin','chief','lead'].includes(currentUser?.role); }
+  // Permissions: по требованию — если пользователь не выбран редактором доски, он не может ничего менять.
+  function isBoardEditor() { return currentBoardMembership?.role === 'editor' || currentBoardIsCreator(); }
+  function canManage() { return currentUser?.role === 'chief' || isBoardEditor() || currentBoardIsCreator(); }
+  function canCreateColumn() { return currentUser?.role === 'chief' || isBoardEditor() || currentBoardIsCreator(); }
+  function canReorderColumns() { return currentUser?.role === 'chief' || isBoardEditor() || currentBoardIsCreator(); }
+  function canViewAllTasks() { return currentUser?.role === 'chief' || isBoardEditor() || currentBoardIsCreator(); }
+  function canChangeRoles() { return currentUser?.role === 'chief' || currentBoardIsCreator(); }
   function isSpecialist() { return currentUser?.role === 'specialist'; }
   function refreshBoardControls() {
     const btnAddColumn = document.getElementById('btnAddColumn');
@@ -721,7 +724,19 @@ async function loadBoards() {
     document.getElementById('boardName').value = '';
     document.getElementById('boardDescription').value = '';
     document.getElementById('boardPrivacy').value = 'public';
-    document.getElementById('boardAllowAnyone').checked = true;
+    const allowEl = document.getElementById('boardAllowAnyone');
+    const allowLabel = document.querySelector("label[for='boardAllowAnyone']");
+    // По требованию: если системная роль пользователя позволяет редактировать все задачи/колонки,
+    // показываем серую неактивную метку "По роли" и блокируем чекбокс.
+    if (['admin','chief','lead'].includes(currentUser?.role)) {
+      allowEl.checked = true;
+      allowEl.disabled = true;
+      if (allowLabel) { allowLabel.textContent = 'По роли'; allowLabel.style.color = '#888780'; }
+    } else {
+      allowEl.checked = true;
+      allowEl.disabled = false;
+      if (allowLabel) { allowLabel.textContent = 'Может просматривать любой'; allowLabel.style.color = ''; }
+    }
     document.getElementById('boardParticipants').value = '';
     document.getElementById('boardViewers').value = '';
     document.getElementById('boardModal').classList.add('active');
@@ -897,7 +912,7 @@ async function loadBoards() {
 
   function renderTask(task, cardColor, cardOp) {
     const col = allColumns.find(c => c.id === task.column);
-    const doneNames = ['выполнено', 'done', 'готово', 'сделано'];
+    const doneNames = ['выполнено', 'ready', 'done', 'готово', 'сделано', 'ахуенно', 'заебись', 'выполнил', 'выполнила', 'выполнили', 'закрыто'];
     const isDone = doneNames.includes(col?.name?.toLowerCase());
     const deadline = task.deadline && !isDone ? deadlineInfo(task.deadline) : null;
     const bg = hexToRgba(cardColor, cardOp);
@@ -1101,6 +1116,7 @@ function startBoardChatResize(event) {
 
   function openAddTask(columnId) {
     currentColumnId = columnId; editingTaskId = null; selectedAssignees = [];
+    currentTaskDelegator = null;
     document.getElementById('taskModalTitle').textContent = 'Новая задача';
     document.getElementById('taskTitle').value = '';
     document.getElementById('taskComment').value = '';
@@ -1119,6 +1135,8 @@ function startBoardChatResize(event) {
     const task = allTasks.find(t => t.id === taskId);
     if (!task) return;
     editingTaskId = taskId; currentColumnId = task.column;
+    const delegator = task.assigned_by || task.assigned_by_id || null;
+    currentTaskDelegator = delegator;
     selectedAssignees = (task.assigned_to||[]).map(u => ({id:u.id, name:u.full_name||u.username}));
     document.getElementById('taskModalTitle').textContent = 'Редактировать задачу';
     document.getElementById('taskTitle').value = task.title;
@@ -1230,14 +1248,20 @@ async function saveTask() {
   }
 
   function removeAssignee(userId) {
+    // Запретить самоудаление исполнителя, если задача была делегирована другому пользователю.
+    if (userId === currentUser?.id && currentTaskDelegator && Number(currentTaskDelegator) !== Number(currentUser?.id)) {
+      showNotification('Нельзя удалить себя — удалять может только делегатор', 'error');
+      return;
+    }
     selectedAssignees = selectedAssignees.filter(a => a.id !== userId);
     renderAssigneesList(); fillAssigneeSelect();
   }
 
   function renderAssigneesList() {
-    document.getElementById('assigneesList').innerHTML = selectedAssignees.map(a =>
-      `<div class="assignee-chip">${escHtml(a.name)}<button onclick="removeAssignee(${a.id})">×</button></div>`
-    ).join('');
+    document.getElementById('assigneesList').innerHTML = selectedAssignees.map(a => {
+      const canRemove = !(a.id === currentUser?.id && currentTaskDelegator && Number(currentTaskDelegator) !== Number(currentUser?.id));
+      return `<div class="assignee-chip">${escHtml(a.name)}${canRemove?`<button onclick="removeAssignee(${a.id})">×</button>`:''}</div>`;
+    }).join('');
   }
 
   function getAssignableUsers() {
@@ -1248,7 +1272,8 @@ async function saveTask() {
         .map(member => member.user?.id || member.user)
         .filter(Boolean)
     );
-    return allUsers.filter(user => editorIds.has(user.id));
+    // Только редакторы доски и главный специалист могут быть назначаемыми.
+    return allUsers.filter(user => editorIds.has(user.id) || user.role === 'chief');
   }
 
   function renderCommentItem(comment, depth = 0) {
@@ -1867,8 +1892,8 @@ async function toggleBoardMembers() {
         if (!res.ok) throw new Error();
         const board = await res.json();
         const members = board.memberships || [];
-        const rolesMap = { admin: 'Админ', editor: 'Редактор', viewer: 'Зритель' };
-        const canManage = Number(board.creator) === Number(currentUser?.id) || currentUser?.role === 'admin';
+        const rolesMap = { editor: 'Редактор', viewer: 'Зритель' };
+        const canManage = Number(board.creator) === Number(currentUser?.id) || currentUser?.role === 'chief';
         const list = document.getElementById('boardMembersList');
         if (!members.length) {
             list.innerHTML = '<div style="padding:24px;text-align:center;">Нет участников</div>';
@@ -1881,9 +1906,8 @@ async function toggleBoardMembers() {
                         <div class="user-meta">Роль: ${rolesMap[m.role]}</div>
                     </div>
                     ${canManage ? `<select class="role-select" onchange="changeBoardMemberRole(${board.id}, ${m.user.id}, this.value)">
-                        <option value="admin" ${m.role==='admin' ? 'selected' : ''}>Админ</option>
-                        <option value="editor" ${m.role==='editor' ? 'selected' : ''}>Редактор</option>
-                        <option value="viewer" ${m.role==='viewer' ? 'selected' : ''}>Зритель</option>
+                      <option value="editor" ${m.role==='editor' ? 'selected' : ''}>Редактор</option>
+                      <option value="viewer" ${m.role==='viewer' ? 'selected' : ''}>Зритель</option>
                     </select>` : ''}
                 </div>
             `).join('');
